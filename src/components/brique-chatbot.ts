@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { NavController } from 'ionic-angular';
-import { MessageBubbleComponent } from './message-bubble.ts';
+import { MessageBubbleComponent } from './message-bubble';
  
 const HTML_TEMPLATE = `
 <div class="special-text">Welcome to the chat module!</div>
