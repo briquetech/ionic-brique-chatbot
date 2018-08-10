@@ -1,5 +1,6 @@
 import { NgModule, ModuleWithProviders } from '@angular/core';
-import { BRIQUEChatbotComponent, MessageBubbleComponent } from './components/message-bubble';
+import { MessageBubbleComponent } from './components/message-bubble';
+import { BRIQUEChatbotComponent } from './components/brique-chatbot';
 // import { AcademyProvider } from './providers/academy-provider';
 import { IonicModule } from 'ionic-angular';
  
