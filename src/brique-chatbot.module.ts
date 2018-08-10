@@ -1,5 +1,5 @@
 import { NgModule, ModuleWithProviders } from '@angular/core';
-import { MessageBubbleComponent } from './components/message-bubble';
+import { BRIQUEChatbotComponent, MessageBubbleComponent } from './components/message-bubble';
 // import { AcademyProvider } from './providers/academy-provider';
 import { IonicModule } from 'ionic-angular';
  
@@ -14,6 +14,7 @@ import { IonicModule } from 'ionic-angular';
 	],
 	exports: [
 		// export the component(s) that you want others to be able to use
+		MessageBubbleComponent, 
 		BRIQUEChatbotComponent
 	]
 })
