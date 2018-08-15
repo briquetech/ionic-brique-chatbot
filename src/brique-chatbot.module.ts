@@ -1,9 +1,10 @@
 import { NgModule, ModuleWithProviders } from '@angular/core';
-import { MessageBubbleComponent } from './components/message-bubble';
-import { BRIQUEChatbotComponent } from './components/brique-chatbot';
-// import { AcademyProvider } from './providers/academy-provider';
+// import { CMPChatMessage } from './components/chat-message';
+// import { CMPChatAction } from './components/chat-action';
+import { BRIQUEChatbot } from './components/brique-chatbot';
+import { BRIQUEChatProvider } from './providers/chat-provider';
 import { IonicModule } from 'ionic-angular';
- 
+
 @NgModule({
 	imports: [
 		// Only if you use elements like ion-content, ion-xyz...
@@ -11,19 +12,20 @@ import { IonicModule } from 'ionic-angular';
 	],
 	declarations: [
 		// declare all components that your module uses
-		MessageBubbleComponent
+		BRIQUEChatbot,
+		// CMPChatMessage
+		// CMPChatAction
 	],
 	exports: [
 		// export the component(s) that you want others to be able to use
-		MessageBubbleComponent, 
-		BRIQUEChatbotComponent
+		BRIQUEChatbot
 	]
 })
 export class BRIQUEChatbotModule {
 	static forRoot(): ModuleWithProviders {
 		return {
-			ngModule: BRIQUEChatbotModule
-			//providers: [AcademyProvider]
+			ngModule: BRIQUEChatbotModule,
+			providers: [BRIQUEChatProvider]
 		};
 	}
 }
