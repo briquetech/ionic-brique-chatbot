@@ -22,7 +22,7 @@ import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
 
 // Import your module
-import { BRIQUEChatbot } from 'ionic-brique-chatbot';
+import { BRIQUEChatbotModule, BRIQUEChatbot } from 'ionic-brique-chatbot';
 
 @NgModule({
   declarations: [
@@ -31,13 +31,13 @@ import { BRIQUEChatbot } from 'ionic-brique-chatbot';
   ],
   imports: [
     IonicModule.forRoot(MyApp),
-
-    BRIQUEChatbot
+    BRIQUEChatbotModule
   ],
   bootstrap: [IonicApp],
   entryComponents: [
     MyApp,
-    HomePage
+    HomePage, 
+    BRIQUEChatbot
   ],
   providers: []
 })
