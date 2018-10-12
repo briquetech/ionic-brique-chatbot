@@ -27,12 +27,14 @@ export class BRIQUEChatProvider {
             });
     }
 
-    // 
+    //
     public postSubjectSelection(_customerCode:string, _botCode:string, _url:string, _selectedSubjectId: number){
         // console.log("call intiateChat function");
         // Let us prepare the HTTP request
         _url = _url + "selectsubject";
-        var requestParams = JSON.stringify({ customercode:_customerCode, botcode:_botCode, subject_id: _selectedSubjectId });
+        var requestParams = { customercode:_customerCode, botcode:_botCode, subject_id: _selectedSubjectId };
+        // console.log("Sending this data .. ");
+        // console.log(requestParams);
         let headers = new Headers({ 'Content-Type': 'application/x-www-form-urlencoded' });
         let options = new RequestOptions({ headers: headers });
         headers.append('Content-Type', 'application/json');
@@ -43,5 +45,9 @@ export class BRIQUEChatProvider {
                     resolve(data);
                 });
             });
+    }
+
+    public postFormResponse(form_id: string, id: string, value: string){
+        
     }
 }
