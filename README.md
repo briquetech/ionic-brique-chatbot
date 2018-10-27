@@ -1,9 +1,9 @@
-# BRIQUE Chatbot IONIC2+/Angular2+ interface
-This is template for plugging in the BRIQUE Chatbot into your mobile application. 
+# UMBRELLIUM Chatbot IONIC2+/Angular2+ interface
+This is template for plugging in the UMBRELLIUM Chatbot into your mobile application. 
 
-For more details on what BRIQUE Chatbot is, check the following link:
+For more details on what UMBRELLIUM Chatbot is, check the following link:
 
-https://brique.in/products/brique-chatbot/
+https://umbrellium.com/
 
 ## How to integrate
 
@@ -16,30 +16,51 @@ npm install ionic-brique-chatbot
 This is your app.module.ts.
 
 ```typescript
-import { NgModule } from '@angular/core';
-import { IonicApp, IonicModule } from 'ionic-angular';
+import { BrowserModule } from '@angular/platform-browser';
+import { ErrorHandler, NgModule } from '@angular/core';
+import { IonicApp, IonicErrorHandler, IonicModule } from 'ionic-angular';
+import { SplashScreen } from '@ionic-native/splash-screen';
+import { StatusBar } from '@ionic-native/status-bar';
+import { HttpModule} from '@angular/http';
 import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
 
-// Import your module
-import { BRIQUEChatbotModule, BRIQUEChatbot } from 'ionic-brique-chatbot';
+// import from modules
+import { BRIQUEChatbot, BRIQUEChatbotModule } from 'ionic-brique-chatbot';
 
 @NgModule({
-  declarations: [
-    MyApp,
-    HomePage
-  ],
-  imports: [
-    IonicModule.forRoot(MyApp),
-    BRIQUEChatbotModule
-  ],
-  bootstrap: [IonicApp],
-  entryComponents: [
-    MyApp,
-    HomePage, 
-    BRIQUEChatbot
-  ],
-  providers: []
+	declarations: [
+		MyApp,
+		HomePage
+	],
+	imports: [
+		BrowserModule,
+		HttpModule,
+		IonicModule.forRoot(MyApp),
+		BRIQUEChatbotModule
+	],
+	bootstrap: [IonicApp],
+	entryComponents: [
+		MyApp,
+		HomePage,
+		BRIQUEChatbot
+	],
+	providers: [
+		StatusBar,
+		SplashScreen,
+		{provide: ErrorHandler, useClass: IonicErrorHandler}
+	]
 })
 export class AppModule {}
+```
+
+#### Now if you want to invoke the chatbot by clicking a button, use the following code in your ts file. 
+```typescript
+this.navCtrl.push(BRIQUEChatbot, {
+  'customerCode': '<<Your customer code>>',
+  'botCode': '<<your bot code>>',
+  'runMode': <<1 for testing, 0 for production>>,
+  'mode': 'mobile',
+  'apiEndpoint': 'https://api.umbrellium.com',
+});
 ```
