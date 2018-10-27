@@ -8,7 +8,7 @@ const HTML_TEMPLATE = `
 <ion-header>
 	<ion-navbar>
 		<ion-title>
-			{{ chatbotName }}
+			{{ chatbotName }} /{{ chatbotTagline }}
 		</ion-title>
 	</ion-navbar>
 </ion-header>
@@ -17,7 +17,14 @@ const HTML_TEMPLATE = `
 		<div #list class="list chatbot-direct-chat-messages" [scrollTop]="list.scrollHeight">
 			<ng-template ngFor let-chatMessage [ngForOf]="chatMessages">
 				<div col-10 class="bubble-container" *ngIf="chatMessage.sender == 1">
-					<div class="white-bubble"><div class="bubble-content"><span>{{ chatMessage.title }}</span></div></div>
+					<div class="white-bubble">
+						<div class="bubble-content">
+							<span [ngClass]="(chatMessage.title!= null && chatMessage.title !== undefined && chatMessage.body!= null && chatMessage.body!==undefined ?'__chatbot-body-title':'')">{{ chatMessage.title }}</span>
+							<span *ngIf="chatMessage.body != null && chatMessage.body !== undefined">
+								{{ chatMessage.body }}
+							</span>
+						</div>
+					</div>
 				</div>
 				<div offset-2 no-padding *ngIf="chatMessage.sender == 2">
 					<div class="blue-bubble"><div class="bubble-content">
@@ -137,6 +144,11 @@ text-align: center;
 padding: 0 10px;
 position:relative;
 }
+.__chatbot-body-title {
+font-size: 15px;
+font-weight: bold;
+margin-bottom: 5px;
+}
 .__exit-buttonsInline {
 list-style-type: none;
 padding-left: 0px;
@@ -209,6 +221,8 @@ export class BRIQUEChatbot {
 
 	customerCode: string;
 	botCode: string;
+	runMode: number;
+	mode: string;
     apiEndpoint: string;
 
 	initiateEndpoint: string;
@@ -222,15 +236,18 @@ export class BRIQUEChatbot {
 
 	// These are the most important blocks
 	chatbotName: string;
+	chatbotSubjectQuestion: string;
+	chatbotTagline: string;
 
 	currentBlock: MdlChatBlock;
 	currentBlockMessages: any[] = [];
+	chatbotSettings: any[] = [];
 	chatMessages: any[] = [];
 	chatbotActions: any[] =[];
 	showWave: boolean = true;
 	currentInput: any = null;
 	currentInputResult: any = null;
-
+	exitRoutes: any[] = [];
 	//
 	exitMessage={};
 	currentBlockMessageIndex=0;
@@ -239,22 +256,28 @@ export class BRIQUEChatbot {
 	currentSelection=1;
 	chatbotImage = "";
 
+	// exit Condition variable
+	exitMessages=[];
+	chatbotEndConvQuestion: string;
+	chatbotEndConvStatement: string;
+
 	constructor(private navCtrl: NavController,
         private navParams:NavParams,
         private chatProvider: BRIQUEChatProvider) {
 			this.customerCode 	= this.navParams.get("customerCode");
 			this.botCode 		= this.navParams.get("botCode");
+			this.runMode 		= this.navParams.get("runMode");
+			this.mode 			= this.navParams.get("mode");
 	        this.apiEndpoint	= this.navParams.get("apiEndpoint");
-	        if( this.customerCode == null || this.customerCode === undefined || this.customerCode.trim().length == 0 ||
-	            this.botCode == null || this.botCode === undefined || this.botCode.trim().length == 0 ||
-	            this.apiEndpoint == null || this.apiEndpoint === undefined || this.apiEndpoint.trim().length == 0 )
+	        if( this.customerCode == null || this.customerCode === undefined || this.customerCode.trim().length == 0 || this.botCode == null || this.botCode === undefined || this.runMode == null ||
+				this.mode === undefined || this.mode.trim().length == 0 ||
+				this.apiEndpoint == null || this.apiEndpoint == null || this.apiEndpoint === undefined || this.apiEndpoint.trim().length == 0 )
 	            throw new Error("Improper Chatbot registration. Please provide the customer code, bot code and the endpoint URL.");
 			this.registerChatbot();
 	}
 
     // Call to register the chatbot
 	private registerChatbot(){
-		console.log("Call to register the chatbot");
 		this.initiateChat();
 	}
 
@@ -270,13 +293,20 @@ export class BRIQUEChatbot {
     // Call to initiate the chat
 	private initiateChat(){
 		// console.log("Call to initiate the chat");
-		this.chatProvider.initiateChat(this.customerCode, this.botCode, this.apiEndpoint).then(data=>{
-            // console.log("Got the data from the server.");
+		this.chatProvider.initiateChat(this.customerCode, this.botCode, this.runMode, this.mode, this.apiEndpoint).then(data=>{
+            console.log("Got the data from the server.");
             console.log(data);
 			this.resetBlocks();
 			if( data.hasOwnProperty("chatbot") && data["chatbot"] != null && data["chatbot"] !== undefined ){
 				let chatbot = data["chatbot"];
 				this.chatbotName = chatbot["bot_name"];
+				this.chatbotTagline = chatbot['tagline'];
+				if( chatbot.hasOwnProperty("settings") && chatbot["settings"] != null && chatbot["settings"] !== undefined ){
+					this.chatbotSettings = chatbot['settings'];
+					this.chatbotSubjectQuestion = chatbot['settings']['show_subjects_question'];
+					this.chatbotEndConvQuestion = chatbot['settings']['end_conversation_question'];
+					this.chatbotEndConvStatement = chatbot['settings']['end_conversation_statement'];
+				}
 			}
 			if( data.hasOwnProperty("greeting") && data["greeting"] != null && data["greeting"] !== undefined ){
 				let greeting = data["greeting"];
@@ -318,18 +348,17 @@ export class BRIQUEChatbot {
 					this.showSubjects();
 				}
 				else{
+					this.showWave = true
 					// This may mean that the conversation may have ended
-					// this.showEndConversation();
+					this.showEndConversation();
 				}
 				return;
 			}
 			this.showWave = true;
 			// Lets add the message
-			console.log("Looking up message number "+this.currentBlockMessageIndex);
 			let blockMessage = this.currentBlockMessages[this.currentBlockMessageIndex];
 			blockMessage.sender = 1;
 			blockMessage.message_id = Date.now();
-			console.log(blockMessage);
 			setTimeout(() => {
 				this.chatMessages.push(blockMessage);
 				this.showWave = false;
@@ -365,8 +394,9 @@ export class BRIQUEChatbot {
 
 	// Show the subjects
 	private showSubjects(){
-		// console.log("showSubjects");
-		var message = { type: "-1", title: "What goals are you planning for?" };
+		let settings = this.chatbotSettings;
+		let subjectQuestion = this.chatbotSubjectQuestion;
+		var message = { title: subjectQuestion, sender:"1", type: "1", subtype:'1',showafter:500 };
 		setTimeout(()=>{
 			this.showWave = false;
 			this.chatMessages.push(message);
@@ -379,8 +409,31 @@ export class BRIQUEChatbot {
 		}, 500);
 	}
 
+	private showEndConversation(){
+		console.log(this.chatbotEndConvQuestion);
+		if(this.chatbotEndConvQuestion != null){
+			var message = { title: this.chatbotEndConvQuestion, sender:"1", type: "1", subtype:'1',showafter:1000 };
+			setTimeout(()=>{
+				this.showWave = false;
+				this.chatMessages.push(message);
+				// Show the actions
+				this.chatbotActions.push({ block_route_id: -1, type: "101", title: "yes" }, { block_route_id: -2, type: "101", title: "no" });
+				this.scrollPageToBottom();
+			}, 1000);
+		}
+		// let routes = this.exitRoutes;
+		// routes.push({ block_route_id: -1, type: "101", title: "yes" }, { block_route_id: -2, type: "101", title: "no" });
+		// var message = { type: "-1", title: this.currentBlock.end_conversation };
+		// console.log(message);
+		// chatbotActions=routes;
+		// currentSelection=3;
+		// setTimeout(function(){
+		// 	setMessageHTML(message);
+		// 	this.chatbotActions.push(route);
+		// }, 500);
+	}
+
 	private optionClick(chatbotAction: any){
-		// console.log("Route clicked");
 		if( chatbotAction.type == '101' ){
 			// Subject was selected
 			this.postSubjectSelection(chatbotAction);
@@ -398,11 +451,9 @@ export class BRIQUEChatbot {
 	private postSubjectSelection(chatbotAction: any){
 		this.resetBlocks();
 		this.showMyResponse(chatbotAction.title, null);
-		console.log("Sending this data ");
-		// console.log(chatbotAction);
-		this.chatProvider.postSubjectSelection(this.customerCode, this.botCode, this.apiEndpoint, chatbotAction.block_route_id).then(data=>{
-			console.log("Subject response data");
-			console.log(data);
+		this.chatProvider.postSubjectSelection(this.customerCode, this.botCode, this.runMode, this.apiEndpoint, chatbotAction.block_route_id).then(data=>{
+			// console.log("Subject response data");
+			// console.log(data);
 			this.extractResponse(data);
 		});
 	}
