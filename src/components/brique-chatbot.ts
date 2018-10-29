@@ -18,11 +18,16 @@ const HTML_TEMPLATE = `
 			<ng-template ngFor let-chatMessage [ngForOf]="chatMessages">
 				<div col-10 class="bubble-container" *ngIf="chatMessage.sender == 1">
 					<div class="white-bubble">
-						<div class="bubble-content">
+						<div class="image-wrapper" *ngIf="chatMessage.include_image !== undefined && chatMessage.include_image==1 && chatMessage.resource_type !== undefined && chatMessage.resource_type == 'i' && chatMessage.resource_url.length > 0">
+						  <img src='{{ chatMessage.resource_url}}' class="__chatbot-image" alt="">
+						</div>
+						<div [ngClass]="(chatMessage.include_image!= null && chatMessage.include_image !== undefined && chatMessage.include_image==1 && chatMessage.resource_type!==undefined && chatMessage.resource_type == 'i' ?'image-content ':'bubble-content')">
 							<span [ngClass]="(chatMessage.title!= null && chatMessage.title !== undefined && chatMessage.body!= null && chatMessage.body!==undefined ?'__chatbot-body-title':'')">{{ chatMessage.title }}</span>
 							<span *ngIf="chatMessage.body != null && chatMessage.body !== undefined">
 								{{ chatMessage.body }}
 							</span>
+							<a href="{{ chatMessage.open_url }}" *ngIf="chatMessage.open_url!==null && chatMessage.url_resource_type == 'w' && chatMessage.show_as == 'l'" class="btn-inapp" (click)="openNewUrl(chatMessage.url_resource_type, chatMessage.open_url)">Link</a>
+							<button ion-button *ngIf="chatMessage.open_url!==null && chatMessage.url_resource_type == 'w' && chatMessage.show_as == 'b'" (click)="openNewUrl(chatMessage.url_resource_type, chatMessage.open_url)">button</button>
 						</div>
 					</div>
 				</div>
@@ -102,6 +107,7 @@ display: inline-block;
 float: left;
 padding-left: 0px;
 margin: 0px 0px 4px 0px;
+overflow: hidden;
 }
 .blue-bubble {
 background-color: #0084ff;
@@ -118,6 +124,14 @@ flex-grow: 1;
 }
 .blue-bubble ul{
 margin: 0; padding: 0;list-style: none;
+}
+.image-wrapper img {
+width: 100%;
+height: auto;
+display: block;
+}
+.image-content {
+padding: 10px;
 }
 .mini_label{
 font-size: 12px;margin-bottom: 3px;
@@ -294,8 +308,8 @@ export class BRIQUEChatbot {
 	private initiateChat(){
 		// console.log("Call to initiate the chat");
 		this.chatProvider.initiateChat(this.customerCode, this.botCode, this.runMode, this.mode, this.apiEndpoint).then(data=>{
-            console.log("Got the data from the server.");
-            console.log(data);
+            // console.log("Got the data from the server.");
+            // console.log(data);
 			this.resetBlocks();
 			if( data.hasOwnProperty("chatbot") && data["chatbot"] != null && data["chatbot"] !== undefined ){
 				let chatbot = data["chatbot"];
@@ -336,11 +350,11 @@ export class BRIQUEChatbot {
 		if( this.currentBlockMessages != null && this.currentBlockMessages.length > 0 ){
 			if ( this.currentBlockMessageIndex >= this.currentBlockMessages.length){
 				// Time to show the subjects and return
-				console.log("currentSelection :: "+this.currentSelection);
+				// console.log("currentSelection :: "+this.currentSelection);
 				if( this.currentSelection == 1 ){
 					if( this.chatbotActions != null && this.chatbotActions.length > 0 ){
 						// showExitMessage();
-						console.log("ShowExitMessage");
+						// console.log("ShowExitMessage");
 					}
 				}
 				else if( this.currentSelection == 2 ){
@@ -410,7 +424,6 @@ export class BRIQUEChatbot {
 	}
 
 	private showEndConversation(){
-		console.log(this.chatbotEndConvQuestion);
 		if(this.chatbotEndConvQuestion != null){
 			var message = { title: this.chatbotEndConvQuestion, sender:"1", type: "1", subtype:'1',showafter:1000 };
 			setTimeout(()=>{
@@ -421,16 +434,6 @@ export class BRIQUEChatbot {
 				this.scrollPageToBottom();
 			}, 1000);
 		}
-		// let routes = this.exitRoutes;
-		// routes.push({ block_route_id: -1, type: "101", title: "yes" }, { block_route_id: -2, type: "101", title: "no" });
-		// var message = { type: "-1", title: this.currentBlock.end_conversation };
-		// console.log(message);
-		// chatbotActions=routes;
-		// currentSelection=3;
-		// setTimeout(function(){
-		// 	setMessageHTML(message);
-		// 	this.chatbotActions.push(route);
-		// }, 500);
 	}
 
 	private optionClick(chatbotAction: any){
@@ -448,6 +451,16 @@ export class BRIQUEChatbot {
 		}
 	}
 
+	private openNewUrl(type:string,externalURL:string){
+		console.log(type +" url "+externalURL);
+		if(type == 'w'){
+			//show external url
+		}
+		if(type == 'p'){
+		 //show ionic page
+	 	}
+	}
+
 	private postSubjectSelection(chatbotAction: any){
 		this.resetBlocks();
 		this.showMyResponse(chatbotAction.title, null);
@@ -460,14 +473,14 @@ export class BRIQUEChatbot {
 
 	private postFormResponse(value: string, key: string){
 		this.chatbotActions = [];
-		console.log("posting form choice");
+		// console.log("posting form choice");
 		this.showMyResponse(value, key);
 		this.processNextMessage();
 	}
 
 	private postInputData(){
-		console.log("posting input data");
-		console.log(this.currentInputResult);
+		// console.log("posting input data");
+		// console.log(this.currentInputResult);
 		this.postFormResponse(this.currentInputResult, this.currentInput.id);
 		this.currentInput = null;
 	}

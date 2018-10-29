@@ -14,7 +14,6 @@ export class BRIQUEChatProvider {
         // Let us prepare the HTTP request
         _url = _url + "initiatebot";
         var requestParams = JSON.stringify({ customercode:_customerCode, botcode:_botCode, runmode:_runMode, mode:_mode });
-		console.log(requestParams);
         let headers = new Headers({ 'Content-Type': 'application/x-www-form-urlencoded' });
         let options = new RequestOptions({ headers: headers });
         headers.append('Content-Type', 'application/json');
