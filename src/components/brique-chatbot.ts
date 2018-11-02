@@ -1,19 +1,13 @@
-import { Component, ViewChild, ElementRef } from '@angular/core';
+import { Component, ViewChild, ElementRef, Input, OnInit } from '@angular/core';
 import { NavController, NavParams, Content } from 'ionic-angular';
 import { BRIQUEChatProvider } from '../providers/chat-provider';
 import { MdlChatBlock } from './chat-block';
 // import { CMPChatAction } from './chat-action';, MdlChatMessage
 
+// TO Build
+// npm uninstall ionic-umbrellium-chatbot && npm install /home/jay/IONIC/chatbot-plugin/ionic-umbrellium-chatbot
 const HTML_TEMPLATE = `
-<ion-header>
-	<ion-navbar>
-		<ion-title>
-			{{ chatbotName }} /{{ chatbotTagline }}
-		</ion-title>
-	</ion-navbar>
-</ion-header>
-<ion-content #content no-padding>
-	<div class="chatbot-container">
+	<div class="chatbot-container" #content>
 		<div #list class="list chatbot-direct-chat-messages" [scrollTop]="list.scrollHeight">
 			<ng-template ngFor let-chatMessage [ngForOf]="chatMessages">
 				<div col-10 class="bubble-container" *ngIf="chatMessage.sender == 1">
@@ -64,7 +58,6 @@ const HTML_TEMPLATE = `
 			</div>
 		</div>
 	</div>
-</ion-content>
 `;
 
 const CHATBOT_CSS = `
@@ -221,23 +214,23 @@ div#wave .dot:nth-child(3) {
 }
 `;
 @Component({
-	// selector: 'brique-chatbot',
+	selector: 'chatbot',
 	template: HTML_TEMPLATE,
 	styles: [CHATBOT_CSS],
 	providers: [ BRIQUEChatProvider ]
 })
-export class BRIQUEChatbot {
+export class BRIQUEChatbot implements OnInit{
 
 	@ViewChild(Content) contentArea: Content;
 	@ViewChild('list') messagesList: ElementRef;
 	// // @ViewChild(List, {read: ElementRef}) chatList: ElementRef;
  	// private mutationObserver: MutationObserver;
 
-	customerCode: string;
-	botCode: string;
-	runMode: number;
-	mode: string;
-    apiEndpoint: string;
+	@Input('customerCode') customerCode: string;
+	@Input('botCode') botCode: string;
+	@Input('runMode') runMode: number;
+	mode: string = "mobile";
+    @Input('apiEndpoint') apiEndpoint: string;
 
 	initiateEndpoint: string;
     initiateResponse: string;
@@ -278,16 +271,20 @@ export class BRIQUEChatbot {
 	constructor(private navCtrl: NavController,
         private navParams:NavParams,
         private chatProvider: BRIQUEChatProvider) {
-			this.customerCode 	= this.navParams.get("customerCode");
-			this.botCode 		= this.navParams.get("botCode");
-			this.runMode 		= this.navParams.get("runMode");
-			this.mode 			= this.navParams.get("mode");
-	        this.apiEndpoint	= this.navParams.get("apiEndpoint");
-	        if( this.customerCode == null || this.customerCode === undefined || this.customerCode.trim().length == 0 || this.botCode == null || this.botCode === undefined || this.runMode == null ||
-				this.mode === undefined || this.mode.trim().length == 0 ||
-				this.apiEndpoint == null || this.apiEndpoint == null || this.apiEndpoint === undefined || this.apiEndpoint.trim().length == 0 )
-	            throw new Error("Improper Chatbot registration. Please provide the customer code, bot code and the endpoint URL.");
-			this.registerChatbot();
+	}
+	ngOnInit() {
+		// this.customerCode 	= this.navParams.get("customerCode");
+		// this.botCode 		= this.navParams.get("botCode");
+		// this.runMode 		= this.navParams.get("runMode");
+		this.mode = "mobile";
+        // this.apiEndpoint	= this.navParams.get("apiEndpoint");
+		console.log("CC:"+this.customerCode+"===BC:"+this.botCode+"===RM:"+this.runMode+"===AE:"+this.apiEndpoint);
+        if( this.customerCode == null || this.customerCode === undefined || this.customerCode.trim().length == 0 ||
+			this.botCode == null || this.botCode === undefined ||
+			this.runMode == null ||
+			this.apiEndpoint == null || this.apiEndpoint == null || this.apiEndpoint === undefined || this.apiEndpoint.trim().length == 0 )
+            throw new Error("Improper Chatbot registration. Please provide the customer code, bot code and the endpoint URL.");
+		this.registerChatbot();
 	}
 
     // Call to register the chatbot
@@ -430,13 +427,17 @@ export class BRIQUEChatbot {
 				this.showWave = false;
 				this.chatMessages.push(message);
 				// Show the actions
-				this.chatbotActions.push({ block_route_id: -1, type: "101", title: "yes" }, { block_route_id: -2, type: "101", title: "no" });
+				// For exit conversation if no - show  chatbot settings
+				this.chatbotActions.push({ block_route_id: -1, type: "-1", title: "yes" }, { block_route_id: -2, type: "-1", title: "no" });
 				this.scrollPageToBottom();
 			}, 1000);
 		}
 	}
 
 	private optionClick(chatbotAction: any){
+
+		console.log("chatbotAction");
+		console.log(chatbotAction);
 		if( chatbotAction.type == '101' ){
 			// Subject was selected
 			this.postSubjectSelection(chatbotAction);
@@ -448,6 +449,15 @@ export class BRIQUEChatbot {
 			// console.log("some sort of a route clicked");
 			// console.log(chatbotAction);
 			this.postFormResponse(chatbotAction.title, chatbotAction.response_label);
+		}
+		else{
+			// This function called when exit route response comes
+			// Like Yes/No
+			var title = this.chatbotEndConvStatement;
+			if(chatbotAction.title=='yes')
+				title = "I can't help you, Please contact to your administrator.";
+			var message = { title: title, sender:"1", type: "1", subtype:'1',showafter:1000 };
+			this.showBotResponse(chatbotAction, message);
 		}
 	}
 
@@ -491,9 +501,25 @@ export class BRIQUEChatbot {
         this.scrollPageToBottom();
 	}
 
+	// -----------------------------------------------------
+	// Show Bot response When user answer to your question
+	private showBotResponse(chatbotAction, botResponseMessage){
+		this.resetBlocks();
+		this.showMyResponse(chatbotAction.title, null);
+		this.showWave = true;
+		setTimeout(()=>{
+			this.showWave = false;
+			this.chatMessages.push(botResponseMessage);
+			this.scrollPageToBottom();
+		}, 1000);
+	}
+
 	private scrollPageToBottom(){
 		setTimeout(()=>{
-			this.contentArea.scrollToBottom();
+			// this.contentArea.scrollToBottom();
+			try {
+	            this.messagesList.nativeElement.scrollTop = this.messagesList.nativeElement.scrollHeight;
+	        } catch(err) { }
 		}, 50);
 	}
 }
