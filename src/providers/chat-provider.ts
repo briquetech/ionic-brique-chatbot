@@ -12,7 +12,7 @@ export class BRIQUEChatProvider {
     // Initiate the chatbot call
 	public initiateChat(_customerCode:string, _botCode:string, _runMode:number, _mode:string, _url:string){
         // Let us prepare the HTTP request
-        _url = _url + "initiatebot";
+        _url = _url + "initmbot";
         var requestParams = JSON.stringify({ customercode:_customerCode, botcode:_botCode, runmode:_runMode, mode:_mode });
         let headers = new Headers({ 'Content-Type': 'application/x-www-form-urlencoded' });
         let options = new RequestOptions({ headers: headers });
@@ -30,7 +30,7 @@ export class BRIQUEChatProvider {
 	// Chatbot subject selected action
     public postSubjectSelection(_customerCode:string, _botCode:string, _runMode:number, _url:string, _selectedSubjectId: number){
         // Let us prepare the HTTP request
-        _url = _url + "selectsubject";
+        _url = _url + "selmsubj";
         var requestParams = { customercode:_customerCode, botcode:_botCode, runmode:_runMode, subject_id: _selectedSubjectId };
         let headers = new Headers({ 'Content-Type': 'application/x-www-form-urlencoded' });
         let options = new RequestOptions({ headers: headers });
