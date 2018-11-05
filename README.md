@@ -7,13 +7,12 @@ https://umbrellium.com/
 
 ## How to integrate
 
-Within your app, install this package by firing this command at the root folder of your app within command prompt
+Within your app, install the chatbot package by firing the following command at the root folder of your app.
 
 npm install ionic-brique-chatbot
 
-## How to plugin BRIQUE Chatbot in your Ionic 2 app
-
-This is your app.module.ts.
+## Integrate UMBRELLIUM Chatbot in your Ionic 2 app
+Make following changes to your app.module.ts.
 
 ```typescript
 import { BrowserModule } from '@angular/platform-browser';
@@ -54,13 +53,15 @@ import { BRIQUEChatbot, BRIQUEChatbotModule } from 'ionic-brique-chatbot';
 export class AppModule {}
 ```
 
-#### Now if you want to invoke the chatbot by clicking a button, use the following code in your ts file. 
-```typescript
-this.navCtrl.push(BRIQUEChatbot, {
-  'customerCode': '<<Your customer code>>',
-  'botCode': '<<your bot code>>',
-  'runMode': <<1 for testing, 0 for production>>,
-  'mode': 'mobile',
-  'apiEndpoint': 'https://api.umbrellium.com',
-});
+## Generate a new ionic page where you want to plug the chatbot in
+Sample Page name : chatbot
+
+ionic generate page chatbot
+
+Please make sure that this page/component is included in app.module.ts
+
+#### Set parameters to invoke the chatbot, use the following code in your html file. 
+```chatbot.html
+<chatbot [customerCode]="'<<Your customer code>>'" botCode='<<your bot code>>' runMode=<<1 for testing, 0 for production>> apiEndpoint="https://api.umbrellium.com"></chatbot>
+
 ```
