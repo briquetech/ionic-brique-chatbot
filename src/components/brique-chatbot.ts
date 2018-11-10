@@ -47,19 +47,25 @@ const HTML_TEMPLATE = `
 			</div>
 			<div class="chatbot-form-element-container" *ngIf="currentInput != null && currentInput !== undefined">
 				<div *ngIf="currentInput.type == '51'">
-					<ion-textarea rows="1" autosize [(ngModel)]="currentInputResult"></ion-textarea>
-					<button ion-button full col-3 color="default" class="btn-send" (click)="postInputData();"><ion-icon name="send"></ion-icon></button>
+					<ion-input col-9 [(ngModel)]="currentInputResult" placeholder="Enter your text.."></ion-input>
+					<button ion-button col-3 color="default" (click)="postInputData();"><ion-icon name="send"></ion-icon></button>
 				</div>
-				<div *ngIf="currentInput.type == '53'">
-					<ion-label>{{ currentInputResult }}</ion-label>
-					<ion-range col-9 min="{{ currentInput.min }}" max="{{ currentInput.max }}" step="{{ currentInput.step }}" snaps="true" color="secondary" [(ngModel)]="currentInputResult"></ion-range>
-					<button col-3 (click)="postInputData();">Send</button>
+				<div class="__chatbot-send-message-div" *ngIf="currentInput.type == '53'">
+					<div class="__chatbot-rangecontainer">
+						<ion-label> You selected {{  currentInputResult }}</ion-label>
+						<ion-range min="{{ currentInput.min_value }}" max="{{ currentInput.max_value }}" step="{{ currentInput.step }}" snaps="true" color="secondary" [(ngModel)]="currentInputResult">
+							<ion-label range-left>{{ currentInput.min_value }}</ion-label>
+	     					<ion-label range-right>{{ currentInput.max_value }}</ion-label>
+						</ion-range>
+					</div>
+					<div class="__chatbot-send">
+						<button ion-button full color="default" (click)="postInputData();"><ion-icon name="paper-plane"></ion-icon></button>
+					</div>
 				</div>
 			</div>
 		</div>
 	</div>
 `;
-
 const CHATBOT_CSS = `
 .clearfix::after {
 content: "";
@@ -70,6 +76,7 @@ display: table;
 display: flex;
 flex-direction: column;
 height: 100%;
+background-color: #edece8;
 }
 ion-content{
 background-color: #f3f3f3;
@@ -77,6 +84,36 @@ background-color: #f3f3f3;
 .chatbot-direct-chat-messages {
 overflow: auto;
 padding: 10px;
+flex-grow: 1;
+}
+.__chatbot-send-message-div{
+margin: 5px 10px;
+text-align: center;
+position: relative;
+display: flex;
+border-radius: 20px;
+border: 3px solid #ddd;
+background: white;
+overflow: hidden;
+}
+.__chatbot-send{
+font-size: 20px;
+float: left;
+background: none;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+.__chatbot-send-message-div .__chatbot-send a {
+margin: 0 10px;
+color: blue;
+}
+.__chatbot-rangecontainer {
+border: 0;
+padding: 0px 15px;
+outline: none;
+font-size: 16px;
+float: left;
 flex-grow: 1;
 }
 .chatbot-footer{
@@ -305,8 +342,8 @@ export class BRIQUEChatbot implements OnInit{
 	private initiateChat(){
 		// console.log("Call to initiate the chat");
 		this.chatProvider.initiateChat(this.customerCode, this.botCode, this.runMode, this.mode, this.apiEndpoint).then(data=>{
-            // console.log("Got the data from the server.");
-            // console.log(data);
+            console.log("Got the data from the server.");
+            console.log(data);
 			this.resetBlocks();
 			if( data.hasOwnProperty("chatbot") && data["chatbot"] != null && data["chatbot"] !== undefined ){
 				let chatbot = data["chatbot"];
@@ -344,6 +381,8 @@ export class BRIQUEChatbot implements OnInit{
 
 	// Processes the chat block, push all the chat messages
 	private processNextMessage(){
+		console.log("processNextMessage");
+		console.log(this.currentBlockMessages);
 		if( this.currentBlockMessages != null && this.currentBlockMessages.length > 0 ){
 			if ( this.currentBlockMessageIndex >= this.currentBlockMessages.length){
 				// Time to show the subjects and return
@@ -379,18 +418,24 @@ export class BRIQUEChatbot implements OnInit{
 				else{
 					if( blockMessage["type"] == "3" ){
 						if( blockMessage["subtype"] == "51" ){
+							console.log('51');
 							this.currentInput = blockMessage["form"][0];
+							console.log(this.currentInput);
 						}
 						else if( blockMessage["subtype"] == "52" ){
+						    console.log('52');
+							console.log(this.currentInput);
 							let choice = blockMessage["form"][0];
-							let _options = choice.options.split(":");
+							let _options = choice.options;
 							for( let _option of _options ){
-								var route = { block_route_id: 0, type: choice.type, title: _option, response_label: choice.id };
+								var route = { block_route_id: 0, type: choice.type, title: _option.text, response_label:choice.pre_id };
 								this.chatbotActions.push(route);
 							}
 						}
 						else if( blockMessage["subtype"] == "53" ){
+							console.log('53');
 							this.currentInput = blockMessage["form"][0];
+							console.log(this.currentInput);
 						}
 					}
 				}
@@ -448,7 +493,7 @@ export class BRIQUEChatbot implements OnInit{
 			// route was selected
 			// console.log("some sort of a route clicked");
 			// console.log(chatbotAction);
-			this.postFormResponse(chatbotAction.title, chatbotAction.response_label);
+			this.postFormResponse(chatbotAction.title, chatbotAction.response_label, null);
 		}
 		else{
 			// This function called when exit route response comes
@@ -457,7 +502,9 @@ export class BRIQUEChatbot implements OnInit{
 			if(chatbotAction.title=='yes')
 				title = "I can't help you, Please contact to your administrator.";
 			var message = { title: title, sender:"1", type: "1", subtype:'1',showafter:1000 };
-			this.showBotResponse(chatbotAction, message);
+			this.showMyResponse(chatbotAction.title, null);
+			this.showBotResponse(message);
+			// this.resetBlocks();
 		}
 	}
 
@@ -481,17 +528,22 @@ export class BRIQUEChatbot implements OnInit{
 		});
 	}
 
-	private postFormResponse(value: string, key: string){
+	private postFormResponse(value: string, key: string, currentBlock : any){
 		this.chatbotActions = [];
-		// console.log("posting form choice");
+		console.log("posting form choice response");
 		this.showMyResponse(value, key);
+		if(currentBlock!= null && currentBlock.hasOwnProperty("post_entry_message") ){
+			console.log("currentBlock");
+			console.log(currentBlock);
+			this.showBotResponse({ title: currentBlock.post_entry_message, sender:"1", type: "1", subtype:'1',showafter:1000 });
+		}
 		this.processNextMessage();
 	}
 
 	private postInputData(){
-		// console.log("posting input data");
-		// console.log(this.currentInputResult);
-		this.postFormResponse(this.currentInputResult, this.currentInput.id);
+		console.log("posting input data");
+		console.log(this.currentInputResult);
+		this.postFormResponse(this.currentInputResult, this.currentInput.pre_id, this.currentInput);
 		this.currentInput = null;
 	}
 
@@ -503,9 +555,7 @@ export class BRIQUEChatbot implements OnInit{
 
 	// -----------------------------------------------------
 	// Show Bot response When user answer to your question
-	private showBotResponse(chatbotAction, botResponseMessage){
-		this.resetBlocks();
-		this.showMyResponse(chatbotAction.title, null);
+	private showBotResponse(botResponseMessage){
 		this.showWave = true;
 		setTimeout(()=>{
 			this.showWave = false;
