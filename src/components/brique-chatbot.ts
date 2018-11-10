@@ -342,8 +342,8 @@ export class BRIQUEChatbot implements OnInit{
 	private initiateChat(){
 		// console.log("Call to initiate the chat");
 		this.chatProvider.initiateChat(this.customerCode, this.botCode, this.runMode, this.mode, this.apiEndpoint).then(data=>{
-            console.log("Got the data from the server.");
-            console.log(data);
+            // console.log("Got the data from the server.");
+            // console.log(data);
 			this.resetBlocks();
 			if( data.hasOwnProperty("chatbot") && data["chatbot"] != null && data["chatbot"] !== undefined ){
 				let chatbot = data["chatbot"];
@@ -381,8 +381,8 @@ export class BRIQUEChatbot implements OnInit{
 
 	// Processes the chat block, push all the chat messages
 	private processNextMessage(){
-		console.log("processNextMessage");
-		console.log(this.currentBlockMessages);
+		// console.log("processNextMessage");
+		// console.log(this.currentBlockMessages);
 		if( this.currentBlockMessages != null && this.currentBlockMessages.length > 0 ){
 			if ( this.currentBlockMessageIndex >= this.currentBlockMessages.length){
 				// Time to show the subjects and return
@@ -418,13 +418,9 @@ export class BRIQUEChatbot implements OnInit{
 				else{
 					if( blockMessage["type"] == "3" ){
 						if( blockMessage["subtype"] == "51" ){
-							console.log('51');
 							this.currentInput = blockMessage["form"][0];
-							console.log(this.currentInput);
 						}
 						else if( blockMessage["subtype"] == "52" ){
-						    console.log('52');
-							console.log(this.currentInput);
 							let choice = blockMessage["form"][0];
 							let _options = choice.options;
 							for( let _option of _options ){
@@ -433,9 +429,7 @@ export class BRIQUEChatbot implements OnInit{
 							}
 						}
 						else if( blockMessage["subtype"] == "53" ){
-							console.log('53');
 							this.currentInput = blockMessage["form"][0];
-							console.log(this.currentInput);
 						}
 					}
 				}
@@ -480,9 +474,6 @@ export class BRIQUEChatbot implements OnInit{
 	}
 
 	private optionClick(chatbotAction: any){
-
-		console.log("chatbotAction");
-		console.log(chatbotAction);
 		if( chatbotAction.type == '101' ){
 			// Subject was selected
 			this.postSubjectSelection(chatbotAction);
@@ -509,7 +500,7 @@ export class BRIQUEChatbot implements OnInit{
 	}
 
 	private openNewUrl(type:string,externalURL:string){
-		console.log(type +" url "+externalURL);
+		// console.log(type +" url "+externalURL);
 		if(type == 'w'){
 			//show external url
 		}
@@ -530,19 +521,16 @@ export class BRIQUEChatbot implements OnInit{
 
 	private postFormResponse(value: string, key: string, currentBlock : any){
 		this.chatbotActions = [];
-		console.log("posting form choice response");
+		// console.log("posting form choice response");
 		this.showMyResponse(value, key);
 		if(currentBlock!= null && currentBlock.hasOwnProperty("post_entry_message") ){
-			console.log("currentBlock");
-			console.log(currentBlock);
 			this.showBotResponse({ title: currentBlock.post_entry_message, sender:"1", type: "1", subtype:'1',showafter:1000 });
 		}
 		this.processNextMessage();
 	}
 
 	private postInputData(){
-		console.log("posting input data");
-		console.log(this.currentInputResult);
+		// console.log(this.currentInputResult);
 		this.postFormResponse(this.currentInputResult, this.currentInput.pre_id, this.currentInput);
 		this.currentInput = null;
 	}
