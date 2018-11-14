@@ -26,7 +26,7 @@ const HTML_TEMPLATE = `
 					</div>
 				</div>
 				<div offset-2 no-padding *ngIf="chatMessage.sender == 2">
-					<div class="blue-bubble"><div class="bubble-content">
+					<div class="blue-bubble" [ngStyle]="{'background-color': userResponseBgColor}"><div class="bubble-content">
 						<ul><li class="mini_label" *ngIf="chatMessage.label != null && chatMessage.label !== undefined">{{ chatMessage.label }}</li><li>{{ chatMessage.title }}</li></ul>
 					</div></div>
 				</div>
@@ -42,7 +42,7 @@ const HTML_TEMPLATE = `
 		<div class="chatbot-footer">
 			<div class="chatbot-action-container" *ngIf="chatbotActions.length > 0">
 				<ul class='__exit-buttonsInline'>
-					<li *ngFor="let chatbotAction of chatbotActions"><a href="#" class="__chatbot-action-button" (click)="optionClick(chatbotAction);">{{ chatbotAction.title }}</a></li>
+					<li *ngFor="let chatbotAction of chatbotActions"><a href="#" class="__chatbot-action-button" (click)="optionClick(chatbotAction);" [ngStyle]="{'background-color': chatbotActionBgColor}">{{ chatbotAction.title }}</a></li>
 				</ul>
 			</div>
 			<div class="chatbot-form-element-container" *ngIf="currentInput != null && currentInput !== undefined">
@@ -280,12 +280,11 @@ export class BRIQUEChatbot implements OnInit{
 
 	// These are the most important blocks
 	chatbotName: string;
-	chatbotSubjectQuestion: string;
 	chatbotTagline: string;
 
 	currentBlock: MdlChatBlock;
 	currentBlockMessages: any[] = [];
-	chatbotSettings: any[] = [];
+
 	chatMessages: any[] = [];
 	chatbotActions: any[] =[];
 	showWave: boolean = true;
@@ -299,6 +298,12 @@ export class BRIQUEChatbot implements OnInit{
 
 	currentSelection=1;
 	chatbotImage = "";
+
+	// Chatbot Settings
+	chatbotSubjectQuestion: string;
+	// chatbotSettings: any[] = [];
+	chatbotActionBgColor: string;
+	userResponseBgColor: string;
 
 	// exit Condition variable
 	exitMessages=[];
@@ -338,22 +343,30 @@ export class BRIQUEChatbot implements OnInit{
 		this.chatbotActions = [];
 	}
 
-    // Call to initiate the chat
+	// Call to initiate the chat
 	private initiateChat(){
 		// console.log("Call to initiate the chat");
 		this.chatProvider.initiateChat(this.customerCode, this.botCode, this.runMode, this.mode, this.apiEndpoint).then(data=>{
-            // console.log("Got the data from the server.");
-            // console.log(data);
+            console.log("Got the data from the server.");
+            console.log(data);
 			this.resetBlocks();
 			if( data.hasOwnProperty("chatbot") && data["chatbot"] != null && data["chatbot"] !== undefined ){
 				let chatbot = data["chatbot"];
 				this.chatbotName = chatbot["bot_name"];
 				this.chatbotTagline = chatbot['tagline'];
 				if( chatbot.hasOwnProperty("settings") && chatbot["settings"] != null && chatbot["settings"] !== undefined ){
-					this.chatbotSettings = chatbot['settings'];
-					this.chatbotSubjectQuestion = chatbot['settings']['show_subjects_question'];
-					this.chatbotEndConvQuestion = chatbot['settings']['end_conversation_question'];
-					this.chatbotEndConvStatement = chatbot['settings']['end_conversation_statement'];
+					let settings = chatbot['settings'];
+					this.chatbotActionBgColor = chatbot['settings']['actions_bg_color'];
+					this.userResponseBgColor = chatbot['settings']['user_response_bg_color'];
+
+					if( settings.hasOwnProperty("show_subjects_question") && settings["show_subjects_question"] != null && settings["show_subjects_question"] !== undefined )
+						this.chatbotSubjectQuestion = chatbot['settings']['show_subjects_question'];
+
+					if( settings.hasOwnProperty("end_conversation_question") && settings["end_conversation_question"] != null && settings["end_conversation_question"] !== undefined )
+						this.chatbotEndConvQuestion = chatbot['settings']['end_conversation_question'];
+
+					if( settings.hasOwnProperty("end_conversation_statement") && settings["end_conversation_statement"] != null && settings["end_conversation_statement"] !== undefined )
+						this.chatbotEndConvStatement = chatbot['settings']['end_conversation_statement'];
 				}
 			}
 			if( data.hasOwnProperty("greeting") && data["greeting"] != null && data["greeting"] !== undefined ){
@@ -444,7 +457,6 @@ export class BRIQUEChatbot implements OnInit{
 
 	// Show the subjects
 	private showSubjects(){
-		let settings = this.chatbotSettings;
 		let subjectQuestion = this.chatbotSubjectQuestion;
 		var message = { title: subjectQuestion, sender:"1", type: "1", subtype:'1',showafter:500 };
 		setTimeout(()=>{
@@ -474,6 +486,7 @@ export class BRIQUEChatbot implements OnInit{
 	}
 
 	private optionClick(chatbotAction: any){
+		console.log("option click ::"+chatbotAction.type);
 		if( chatbotAction.type == '101' ){
 			// Subject was selected
 			this.postSubjectSelection(chatbotAction);
@@ -486,16 +499,29 @@ export class BRIQUEChatbot implements OnInit{
 			// console.log(chatbotAction);
 			this.postFormResponse(chatbotAction.title, chatbotAction.response_label, null);
 		}
+		else if(chatbotAction.type == '9999'){
+			this.resetBlocks();
+			this.showSubjects();
+			this.currentSelection = 2;
+		}
 		else{
 			// This function called when exit route response comes
 			// Like Yes/No
+			this.showWave = true;
 			var title = this.chatbotEndConvStatement;
-			if(chatbotAction.title=='yes')
-				title = "I can't help you, Please contact to your administrator.";
-			var message = { title: title, sender:"1", type: "1", subtype:'1',showafter:1000 };
-			this.showMyResponse(chatbotAction.title, null);
-			this.showBotResponse(message);
-			// this.resetBlocks();
+			this.resetBlocks();
+			setTimeout(()=>{
+				this.showWave = false;
+				if(chatbotAction.title=='yes'){
+					this.showSubjects();
+					this.currentSelection = 2;
+				}
+				else{
+					this.showBotResponse({ title: title, sender:"1", type: "1", subtype:'1',showafter:1000 });
+					this.showRestartConversation();
+				}
+			}, 1000);
+
 		}
 	}
 
@@ -559,5 +585,15 @@ export class BRIQUEChatbot implements OnInit{
 	            this.messagesList.nativeElement.scrollTop = this.messagesList.nativeElement.scrollHeight;
 	        } catch(err) { }
 		}, 50);
+	}
+
+	// Restart the conversation
+	private showRestartConversation(){
+		setTimeout(()=>{
+			var route = { block_route_id: -1, type: '9999', title: "Restart"};
+			this.chatbotActions.push(route);
+			this.currentSelection = 0;
+			this.scrollPageToBottom();
+		}, 1000);
 	}
 }
