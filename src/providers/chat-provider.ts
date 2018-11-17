@@ -44,7 +44,39 @@ export class BRIQUEChatProvider {
             });
     }
 
-    public postFormResponse(form_id: string, id: string, value: string){
+	// ---------------------------------
+	// Chatbot form response
+    public postFormResponse(_customerCode:string, _botCode:string, _runMode:number, _url:string, __formResponse: any, __messageId:string){
+		// Let us prepare the HTTP request
+        _url = _url + "postmfrmresp";
+        var requestParams = { customercode:_customerCode, botcode:_botCode, runmode:_runMode, form_response:__formResponse, message_id:__messageId};
+        let headers = new Headers({ 'Content-Type': 'application/x-www-form-urlencoded' });
+        let options = new RequestOptions({ headers: headers });
+        headers.append('Content-Type', 'application/json');
+        return new Promise(resolve => {
+            this.http.post(_url, requestParams, options)
+                .map(res => res.json())
+                .subscribe(data => {
+                    resolve(data);
+                });
+            });
+    }
 
+	// ---------------------------------
+	// Chatbot Route response
+	public postRouteResponse(_customerCode:string, _botCode:string, _runMode:number, _url:string, __fromBlockId: number, __routeId:number, __routeType:number){
+		// Let us prepare the HTTP request
+        _url = _url + "postmresp";
+        var requestParams = { customercode:_customerCode, botcode:_botCode, runmode:_runMode, from_block_id:__fromBlockId, route_id:__routeId, route_type: __routeType };
+        let headers = new Headers({ 'Content-Type': 'application/x-www-form-urlencoded' });
+        let options = new RequestOptions({ headers: headers });
+        headers.append('Content-Type', 'application/json');
+        return new Promise(resolve => {
+            this.http.post(_url, requestParams, options)
+                .map(res => res.json())
+                .subscribe(data => {
+                    resolve(data);
+                });
+            });
     }
 }

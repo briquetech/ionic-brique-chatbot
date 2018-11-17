@@ -9,31 +9,47 @@ import { MdlChatBlock } from './chat-block';
 const HTML_TEMPLATE = `
 	<div class="chatbot-container" #content>
 		<div #list class="list chatbot-direct-chat-messages" [scrollTop]="list.scrollHeight">
-			<ng-template ngFor let-chatMessage [ngForOf]="chatMessages">
-				<div col-10 class="bubble-container" *ngIf="chatMessage.sender == 1">
-					<div class="white-bubble">
-						<div class="image-wrapper" *ngIf="chatMessage.include_image !== undefined && chatMessage.include_image==1 && chatMessage.resource_type !== undefined && chatMessage.resource_type == 'i' && chatMessage.resource_url.length > 0">
-						  <img src='{{ chatMessage.resource_url}}' class="__chatbot-image" alt="">
+			<ng-template ngFor let-chatMessage let-i="index" [ngForOf]="chatMessages">
+				<div col-11 class="bubble-container" *ngIf="chatMessage.sender == 1">
+					<span class="bot-icon"><img *ngIf="i==0" src="assets/imgs/bot-icon.jpg"></span>
+					<div class="white-bubble" [ngClass]="[chatMessage.subtype == '10'?'__chatbot-notification':'',chatMessage.subtype == '11'?'__chatbot-successful':'', chatMessage.subtype == '12'?'__chatbot-warning':'',chatMessage.subtype == '13'?'__chatbot-fatal':'']">
+						<div [ngClass]="(chatMessage.subtype == '1'?'image-wrapper':'')" *ngIf="chatMessage.include_image !== undefined && chatMessage.include_image==1 && chatMessage.resource_type !== undefined && chatMessage.resource_type == 'i' && chatMessage.resource_url.length > 0">
+						  <img src='{{ chatMessage.resource_url }}' class="__chatbot-image" alt="">
 						</div>
 						<div [ngClass]="(chatMessage.include_image!= null && chatMessage.include_image !== undefined && chatMessage.include_image==1 && chatMessage.resource_type!==undefined && chatMessage.resource_type == 'i' ?'image-content ':'bubble-content')">
-							<span [ngClass]="(chatMessage.title!= null && chatMessage.title !== undefined && chatMessage.body!= null && chatMessage.body!==undefined ?'__chatbot-body-title':'')">{{ chatMessage.title }}</span>
-							<span *ngIf="chatMessage.body != null && chatMessage.body !== undefined">
+							<div [ngClass]="(chatMessage.title!= null && chatMessage.title !== undefined && chatMessage.body!= null && chatMessage.body!==undefined ?'__chatbot-body-title':'')">{{ chatMessage.title }}</div>
+							<div *ngIf="chatMessage.body != null && chatMessage.body !== undefined">
 								{{ chatMessage.body }}
-							</span>
+							</div>
 							<a href="{{ chatMessage.open_url }}" *ngIf="chatMessage.open_url!==null && chatMessage.url_resource_type == 'w' && chatMessage.show_as == 'l'" class="btn-inapp" (click)="openNewUrl(chatMessage.url_resource_type, chatMessage.open_url)">Link</a>
 							<button ion-button *ngIf="chatMessage.open_url!==null && chatMessage.url_resource_type == 'w' && chatMessage.show_as == 'b'" (click)="openNewUrl(chatMessage.url_resource_type, chatMessage.open_url)">button</button>
 						</div>
 					</div>
 				</div>
-				<div offset-2 no-padding *ngIf="chatMessage.sender == 2">
-					<div class="blue-bubble" [ngStyle]="{'background-color': userResponseBgColor}"><div class="bubble-content">
-						<ul><li class="mini_label" *ngIf="chatMessage.label != null && chatMessage.label !== undefined">{{ chatMessage.label }}</li><li>{{ chatMessage.title }}</li></ul>
-					</div></div>
+				<div col-12 *ngIf="chatMessage.options!==null && chatMessage.options!==undefined && chatMessage.options.length > 0">
+					<div class="chatbot-action-container">
+						<ul class='__exit-buttonsInline'>
+							<li *ngFor="let option of chatMessage.options"><a href="#" class="__chatbot-action-button" (click)="optionClick(option);" [ngStyle]="{'background-color': chatbotActionBgColor}">{{ option.title }}</a></li>
+						</ul>
+					</div>
+				</div>
+				<div offset-1 no-padding class="blue-bubble-box" *ngIf="chatMessage.sender == 2">
+					<div class="blue-bubble" [ngStyle]="{'background-color': userResponseBgColor}">
+						<div class="bubble-content">
+							<ul>
+								<li>
+									<span class="mini_label" *ngIf="chatMessage.label != null && chatMessage.label !== undefined">{{ chatMessage.label }}</span> {{ chatMessage.title }}
+								</li>
+							</ul>
+						</div>
+					</div>
+					<span class="user-icon"><img src="assets/imgs/user-icon.png"></span>
 				</div>
 				<div class="clearfix"></div>
 			</ng-template>
 			<div class="clearfix"></div>
-			<div col-10 class="bubble-container" *ngIf="showWave == true">
+			<div col-11 class="bubble-container" *ngIf="showWave == true">
+				<span class="bot-icon"><img src="assets/imgs/bot-icon.jpg"></span>
 				<div class="white-bubble"><div class="bubble-content">
 					<div id="wave"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
 				</div></div>
@@ -47,8 +63,20 @@ const HTML_TEMPLATE = `
 			</div>
 			<div class="chatbot-form-element-container" *ngIf="currentInput != null && currentInput !== undefined">
 				<div *ngIf="currentInput.type == '51'">
-					<ion-input col-9 [(ngModel)]="currentInputResult" placeholder="Enter your text.."></ion-input>
-					<button ion-button col-3 color="default" (click)="postInputData();"><ion-icon name="send"></ion-icon></button>
+					<div class="bubble-container">
+						<div class="white-bubble">
+							<div class="bubble-content1">
+								<ion-row>
+									<ion-col col-9>
+										<ion-input [(ngModel)]="currentInputResult" placeholder="Enter your text.."></ion-input>
+									</ion-col>
+									<ion-col col-3>
+										<button ion-button color="default" (click)="postInputData();"><ion-icon name="send"></ion-icon></button>
+									</ion-col>
+								</ion-row>
+							</div>
+						</div>
+					</div>
 				</div>
 				<div class="__chatbot-send-message-div" *ngIf="currentInput.type == '53'">
 					<div class="__chatbot-rangecontainer">
@@ -76,7 +104,7 @@ display: table;
 display: flex;
 flex-direction: column;
 height: 100%;
-background-color: #edece8;
+background-color: #f7f7f9;
 }
 ion-content{
 background-color: #f3f3f3;
@@ -120,8 +148,21 @@ flex-grow: 1;
 width: 100%;
 }
 .bubble-container{
-display: block;
+display: flex;
 padding: 0;
+flex-direction: row;
+}
+.bot-icon {
+width: 25px;
+height: 25px;
+float: left;
+margin-right: 5px;
+flex-shrink: 0;
+}
+.bot-icon img {
+width:100%;
+height:auto;
+border-radius: 50%;
 }
 .white-bubble, .blue-bubble {
 background-color: #fff;
@@ -132,12 +173,17 @@ border-bottom-left-radius: 0.5em;
 border-bottom-right-radius: 0.5em;
 box-shadow: 0 0.4px 0.2px rgba(0,0,0,0.35);
 -webkit-box-shadow: 0 0.4px 0.2px rgba(0,0,0,0.35);
-width: auto;
-display: inline-block;
-float: left;
+// width: auto;
+// display: inline-block;
+// float: left;
 padding-left: 0px;
 margin: 0px 0px 4px 0px;
 overflow: hidden;
+}
+.blue-bubble-box{
+display:flex;
+padding:0;
+float:right;
 }
 .blue-bubble {
 background-color: #0084ff;
@@ -149,11 +195,20 @@ margin: 0px 0px 5px 0px;
 }
 .bubble-content {
 padding: 10px;
-display: flex;
-flex-grow: 1;
 }
 .blue-bubble ul{
 margin: 0; padding: 0;list-style: none;
+}
+.user-icon {
+float: right;
+margin-left: 10px;
+flex-shrink: 0;
+}
+.user-icon img {
+width: 25px;
+height: 25px;
+border-radius: 50%;
+display: block;
 }
 .image-wrapper img {
 width: 100%;
@@ -184,7 +239,7 @@ text-align: center;
 margin: 0 auto;
 }
 .chatbot-action-container{
-text-align: center;
+text-align: right;
 padding: 0 10px;
 position:relative;
 }
@@ -249,6 +304,78 @@ div#wave .dot:nth-child(3) {
 		transform: translateY(-10px);
 	}
 }
+/* ============ SPECIAL MESSAGES ============ */
+.__chatbot-notification {
+padding: 18px;
+text-align: center;
+background: rgba(142,106,220,1);
+background: -moz-linear-gradient(45deg, rgba(142,106,220,1) 0%,
+rgba(56,98,204,1) 100%);
+background: -webkit-gradient(left bottom, right top, color-stop(0%,
+rgba(142,106,220,1)), color-stop(100%, rgba(56,98,204,1)));
+background: -webkit-linear-gradient(45deg, rgba(142,106,220,1) 0%,
+rgba(56,98,204,1) 100%);
+background: -o-linear-gradient(45deg, rgba(142,106,220,1) 0%,
+rgba(56,98,204,1) 100%);
+background: -ms-linear-gradient(45deg, rgba(142,106,220,1) 0%,
+rgba(56,98,204,1) 100%);
+background: linear-gradient(45deg, rgba(142,106,220,1) 0%,
+rgba(56,98,204,1) 100%);
+filter: progid:DXImageTransform.Microsoft.gradient(
+startColorstr='#8e6adc', endColorstr='#3862cc', GradientType=1 );
+}
+.__chatbot-notification img {
+width: 100px;
+height: 100px;
+}
+/*successful bubble css*/
+.__chatbot-successful {
+padding: 18px;
+text-align: center;
+background: rgba(89,193,157,1);
+background: -moz-linear-gradient(45deg, rgba(89,193,157,1) 0%,
+rgba(129,231,125,1) 100%);
+background: -webkit-gradient(left bottom, right top, color-stop(0%,
+rgba(89,193,157,1)), color-stop(100%, rgba(129,231,125,1)));
+background: -webkit-linear-gradient(45deg, rgba(89,193,157,1) 0%,
+rgba(129,231,125,1) 100%);
+background: -o-linear-gradient(45deg, rgba(89,193,157,1) 0%,
+rgba(129,231,125,1) 100%);
+background: -ms-linear-gradient(45deg, rgba(89,193,157,1) 0%,
+rgba(129,231,125,1) 100%);
+background: linear-gradient(45deg, rgba(89,193,157,1) 0%,
+rgba(129,231,125,1) 100%);
+filter: progid:DXImageTransform.Microsoft.gradient(
+startColorstr='#59c19d', endColorstr='#81e77d', GradientType=1 );
+}
+.__chatbot-successful img {
+width: 100px;
+height: 100px;
+}
+/*successful bubble css*/
+.__chatbot-fatal {
+padding: 18px;
+text-align: center;
+background: rgba(238,157,107,1);
+background: -moz-linear-gradient(-45deg, rgba(238,157,107,1) 0%,
+rgba(254,116,114,1) 100%);
+background: -webkit-gradient(left top, right bottom, color-stop(0%,
+rgba(238,157,107,1)), color-stop(100%, rgba(254,116,114,1)));
+background: -webkit-linear-gradient(-45deg, rgba(238,157,107,1) 0%,
+rgba(254,116,114,1) 100%);
+background: -o-linear-gradient(-45deg, rgba(238,157,107,1) 0%,
+rgba(254,116,114,1) 100%);
+background: -ms-linear-gradient(-45deg, rgba(238,157,107,1) 0%,
+rgba(254,116,114,1) 100%);
+background: linear-gradient(135deg, rgba(238,157,107,1) 0%,
+rgba(254,116,114,1) 100%);
+filter: progid:DXImageTransform.Microsoft.gradient(
+startColorstr='#ee9d6b', endColorstr='#fe7472', GradientType=1 );
+}
+.__chatbot-fatal img {
+width: 100px;
+height: 100px;
+}
 `;
 @Component({
 	selector: 'chatbot',
@@ -286,13 +413,15 @@ export class BRIQUEChatbot implements OnInit{
 	currentBlockMessages: any[] = [];
 
 	chatMessages: any[] = [];
+	chatMessageOptions: any[] =[];
 	chatbotActions: any[] =[];
+	formResponseArray: any[] =[];
 	showWave: boolean = true;
 	currentInput: any = null;
 	currentInputResult: any = null;
 	exitRoutes: any[] = [];
 	//
-	exitMessage={};
+	exitMessage: string;
 	currentBlockMessageIndex=0;
 	subjects=[];
 
@@ -338,72 +467,128 @@ export class BRIQUEChatbot implements OnInit{
 	private resetBlocks(){
 		this.currentBlock = null;
 		this.currentInput = null;
-		this.exitMessage={};
+		this.exitMessage="";
+		this.exitRoutes =[];
 		this.currentBlockMessageIndex=0;
 		this.chatbotActions = [];
 	}
 
 	// Call to initiate the chat
 	private initiateChat(){
-		// console.log("Call to initiate the chat");
 		this.chatProvider.initiateChat(this.customerCode, this.botCode, this.runMode, this.mode, this.apiEndpoint).then(data=>{
-            console.log("Got the data from the server.");
+            console.log("Initiate chatbot data from the server.");
             console.log(data);
 			this.resetBlocks();
 			if( data.hasOwnProperty("chatbot") && data["chatbot"] != null && data["chatbot"] !== undefined ){
 				let chatbot = data["chatbot"];
 				this.chatbotName = chatbot["bot_name"];
 				this.chatbotTagline = chatbot['tagline'];
+				// ----------------------------------
+				// Manage chatbot settings
 				if( chatbot.hasOwnProperty("settings") && chatbot["settings"] != null && chatbot["settings"] !== undefined ){
 					let settings = chatbot['settings'];
 					this.chatbotActionBgColor = chatbot['settings']['actions_bg_color'];
 					this.userResponseBgColor = chatbot['settings']['user_response_bg_color'];
-
+					// Subject Question
 					if( settings.hasOwnProperty("show_subjects_question") && settings["show_subjects_question"] != null && settings["show_subjects_question"] !== undefined )
 						this.chatbotSubjectQuestion = chatbot['settings']['show_subjects_question'];
-
+					// Like Is anything  that may i help you?
 					if( settings.hasOwnProperty("end_conversation_question") && settings["end_conversation_question"] != null && settings["end_conversation_question"] !== undefined )
 						this.chatbotEndConvQuestion = chatbot['settings']['end_conversation_question'];
-
+					// If No then show Ok,have a nice day
 					if( settings.hasOwnProperty("end_conversation_statement") && settings["end_conversation_statement"] != null && settings["end_conversation_statement"] !== undefined )
 						this.chatbotEndConvStatement = chatbot['settings']['end_conversation_statement'];
 				}
 			}
+			// ----------------------------------
+			// Manage chatbot Greetings here
 			if( data.hasOwnProperty("greeting") && data["greeting"] != null && data["greeting"] !== undefined ){
 				let greeting = data["greeting"];
 				if( greeting.hasOwnProperty("block") && greeting["block"] != null && greeting["block"] !== undefined ){
-					this.extractResponse(greeting);
+					this.processResponse(greeting);
+					let block = greeting['block'];
+					// If chatbot having exist routes
+					if( block.hasOwnProperty("exit_message") && block["exit_message"] != null && block["exit_message"] !== undefined){
+						this.exitMessage = block["exit_message"];
+						this.exitRoutes = block["routes"];
+					}
 				}
+				// ----------------------------------------------
+				// Manage subjects here
 				// PENDING: need to take a good look at this
-				if( greeting.hasOwnProperty("subjects") && greeting["subjects"] != null && greeting["subjects"] !== undefined ){
+				if( greeting.hasOwnProperty("subjects") && greeting["subjects"]!= null && greeting["subjects"] !== undefined ){
 					this.subjects = greeting["subjects"];
 				}
 			}
         });
 	}
 
-	// Extract the response
-	private extractResponse(_data){
-		this.currentBlock = new MdlChatBlock(_data["block"]);
-		this.currentInput = null;
-		this.currentBlockMessages = this.currentBlock.messages;
-		this.currentBlockMessageIndex = 0;
+	//-------------------------------------
+	//  Process the response
+	private processResponse(_data){
+		// if status == 1, routes are still coming
+		// if status == 2, time to show subjects
+		// if status == 3, time to rewind
 		this.currentSelection = _data["status"];
-		this.processNextMessage();
+		if(_data["status"] == "1"){
+			this.currentBlock = new MdlChatBlock(_data["block"]);
+			this.currentInput = null;
+			if( _data.hasOwnProperty("block") && _data["block"]!= null && _data["block"] !== undefined ){
+				this.currentBlockMessages = this.currentBlock.messages;
+				this.currentBlockMessageIndex = 0;
+				let blockObject = _data["block"];
+				if( blockObject.hasOwnProperty("routes") && blockObject['routes']!= null && blockObject['routes']!== undefined ){
+					console.log("shwo exit messages");
+					this.exitRoutes = blockObject['routes'];
+					this.exitMessage = blockObject['exit_message'];
+				}
+				this.processNextMessage();
+			}
+
+		}
+		else if(_data["status"] == "2"){
+			this.currentBlock = new MdlChatBlock(_data["block"]);
+			this.currentInput = null;
+			if( _data.hasOwnProperty("block") && _data["block"]!= null && _data["block"] !== undefined ){
+				this.currentBlockMessages = _data['block']['messages'];
+				this.currentBlockMessageIndex = 0;
+			}
+			if( _data.hasOwnProperty("subjects") && _data["subjects"]!= null && _data["subjects"] !== undefined )
+				this.subjects = _data["subjects"];
+			if(this.currentBlockMessages.length > 0)
+				this.processNextMessage();
+			else
+			  	this.showSubjects();
+		}
+		else if(_data["status"] == "3"){
+			if( _data.hasOwnProperty("block") && _data["block"]!= null && _data["block"] !== undefined ){
+				this.currentBlock = new MdlChatBlock(_data["block"]);
+				if( _data['block']['messages'] != null && _data['block']['messages'] != undefined ){
+					this.currentBlockMessages = _data['block']['messages'];
+					this.currentBlockMessageIndex = 0;
+				}
+				if(this.currentBlockMessages.length > 0)
+					this.processNextMessage();
+				else
+				  	this.showEndConversation();
+			}
+		}
 	}
 
+	// -----------------------------------------------------
 	// Processes the chat block, push all the chat messages
 	private processNextMessage(){
-		// console.log("processNextMessage");
-		// console.log(this.currentBlockMessages);
 		if( this.currentBlockMessages != null && this.currentBlockMessages.length > 0 ){
 			if ( this.currentBlockMessageIndex >= this.currentBlockMessages.length){
 				// Time to show the subjects and return
-				// console.log("currentSelection :: "+this.currentSelection);
+				console.log("currentSelection :: "+this.currentSelection);
 				if( this.currentSelection == 1 ){
-					if( this.chatbotActions != null && this.chatbotActions.length > 0 ){
-						// showExitMessage();
-						// console.log("ShowExitMessage");
+					console.log("exitRoutes Action");
+					console.log(this.exitRoutes);
+					if( this.exitRoutes != null && this.exitRoutes.length > 0 ){
+						this.showWave = true;
+						this.showExitMessage();
+						console.log(" comming here ShowExitMessage");
 					}
 				}
 				else if( this.currentSelection == 2 ){
@@ -420,6 +605,7 @@ export class BRIQUEChatbot implements OnInit{
 			this.showWave = true;
 			// Lets add the message
 			let blockMessage = this.currentBlockMessages[this.currentBlockMessageIndex];
+			console.log("-------------------------------->"); console.log(blockMessage);
 			blockMessage.sender = 1;
 			blockMessage.message_id = Date.now();
 			setTimeout(() => {
@@ -431,15 +617,26 @@ export class BRIQUEChatbot implements OnInit{
 				else{
 					if( blockMessage["type"] == "3" ){
 						if( blockMessage["subtype"] == "51" ){
+							console.log("get input subtype 51");
+							console.log(blockMessage);
 							this.currentInput = blockMessage["form"][0];
+							this.currentInput['form_id'] = blockMessage["form_id"];
+							this.currentInput['message_id'] = blockMessage["message_id"];
 						}
 						else if( blockMessage["subtype"] == "52" ){
+							// let chatMessages = this.chatMessages;
+							this.currentInput =blockMessage["form"][0];
+							this.currentInput['form_id'] = blockMessage["form_id"];
+							this.currentInput['message_id'] = blockMessage["message_id"];
 							let choice = blockMessage["form"][0];
 							let _options = choice.options;
 							for( let _option of _options ){
-								var route = { block_route_id: 0, type: choice.type, title: _option.text, response_label:choice.pre_id };
+								var route = { block_route_id: 0, type: choice.type, title: _option.text, response_label:choice.pre_id, post_entry_message: _option.post_entry_message };
+								// this.chatMessageOptions.push(route);
 								this.chatbotActions.push(route);
 							}
+							// blockMessage['options']=this.chatMessageOptions;
+							// console.log(this.chatMessages);
 						}
 						else if( blockMessage["subtype"] == "53" ){
 							this.currentInput = blockMessage["form"][0];
@@ -450,19 +647,27 @@ export class BRIQUEChatbot implements OnInit{
 			}, blockMessage.showafter);
 		}
 		else{
-			// Time to show exit message or subjects
+			console.log(" current block message null ");
+			console.log("currentSelection :: "+this.currentSelection);
+			if( this.exitRoutes != null && this.exitRoutes.length > 0 ){
+				this.showWave = true;
+				this.showExitMessage();
+				console.log(" comming here ShowExitMessage");
+			}
 			this.scrollPageToBottom();
 		}
 	}
 
 	// Show the subjects
 	private showSubjects(){
+		console.log("show subject called");
 		let subjectQuestion = this.chatbotSubjectQuestion;
 		var message = { title: subjectQuestion, sender:"1", type: "1", subtype:'1',showafter:500 };
 		setTimeout(()=>{
 			this.showWave = false;
 			this.chatMessages.push(message);
 			// Show the actions
+			console.log(this.subjects);
 			for(let subject of this.subjects){
 				var route = { block_route_id: subject.subject_id, type: '101', title: subject.subject_title };
 				this.chatbotActions.push(route);
@@ -471,6 +676,22 @@ export class BRIQUEChatbot implements OnInit{
 		}, 500);
 	}
 
+	private showExitMessage(){
+		if(this.exitMessage!= null){
+			var message = { title: this.exitMessage, sender:"1", type: "101", subtype:'1',showafter:1000 };
+			setTimeout(()=>{
+				this.showWave = false;
+				this.chatMessages.push(message);
+				// Show the actions
+				// For exit conversation if no - show  chatbot settings
+				for(let exitRoute of this.exitRoutes){
+					var route = { block_route_id: exitRoute.block_route_id, type: '100', title: exitRoute.title, 'block_id':exitRoute.block_id, 'route_id':exitRoute.block_route_id};
+					this.chatbotActions.push(route);
+				}
+				this.scrollPageToBottom();
+			}, 1000);
+		}
+	}
 	private showEndConversation(){
 		if(this.chatbotEndConvQuestion != null){
 			var message = { title: this.chatbotEndConvQuestion, sender:"1", type: "1", subtype:'1',showafter:1000 };
@@ -486,18 +707,26 @@ export class BRIQUEChatbot implements OnInit{
 	}
 
 	private optionClick(chatbotAction: any){
+		console.log("---- option click -------");
+		console.log(chatbotAction);
 		console.log("option click ::"+chatbotAction.type);
-		if( chatbotAction.type == '101' ){
+		if( chatbotAction.type == '100'){
+			console.log("comming in exit route type");
+			this.postRouteResponse(chatbotAction);
+		}
+		else if( chatbotAction.type == '101' ){
 			// Subject was selected
 			this.postSubjectSelection(chatbotAction);
 		}
 		else if( chatbotAction.type == '102' ){
+			// here is chatBot single choice
 		}
 		else if( chatbotAction.type == '52' ){
 			// route was selected
-			// console.log("some sort of a route clicked");
-			// console.log(chatbotAction);
-			this.postFormResponse(chatbotAction.title, chatbotAction.response_label, null);
+			console.log("some sort of a route clicked");
+			console.log(this.currentInput);
+			console.log(chatbotAction);
+			this.postSingleFormResponse(chatbotAction.title, chatbotAction.response_label, chatbotAction);
 		}
 		else if(chatbotAction.type == '9999'){
 			this.resetBlocks();
@@ -541,23 +770,50 @@ export class BRIQUEChatbot implements OnInit{
 		this.chatProvider.postSubjectSelection(this.customerCode, this.botCode, this.runMode, this.apiEndpoint, chatbotAction.block_route_id).then(data=>{
 			// console.log("Subject response data");
 			// console.log(data);
-			this.extractResponse(data);
+			this.processResponse(data);
+		});
+	}
+	// --------------------------------------
+	// Manage Exit Route response
+	private postRouteResponse(chatbotAction: any){
+		console.log("------------ post route reponse -----------");
+		this.resetBlocks();
+		this.showMyResponse(chatbotAction.title, null);
+		console.log(chatbotAction);
+		let currentInput = this.currentInput;
+		console.log(currentInput);
+		this.chatProvider.postRouteResponse(this.customerCode, this.botCode, this.runMode, this.apiEndpoint, chatbotAction.block_id, chatbotAction.route_id, this.currentSelection).then(data=>{
+			console.log("Post route response data");
+			console.log(data);
+			this.processResponse(data);
 		});
 	}
 
-	private postFormResponse(value: string, key: string, currentBlock : any){
+	// -----------------------------------
+	// Single form response
+	private postSingleFormResponse(value: string, key: string, chatbotAction : any){
 		this.chatbotActions = [];
-		// console.log("posting form choice response");
+		this.formResponseArray = [];
+		console.log(" postSingleFormResponse");
+		let currentInput = this.currentInput;
+		let block_id = this.currentBlock.block_id;
 		this.showMyResponse(value, key);
-		if(currentBlock!= null && currentBlock.hasOwnProperty("post_entry_message") ){
-			this.showBotResponse({ title: currentBlock.post_entry_message, sender:"1", type: "1", subtype:'1',showafter:1000 });
+		if(chatbotAction!= null && chatbotAction.hasOwnProperty("post_entry_message") ){
+			this.showBotResponse({ title: chatbotAction.post_entry_message, sender:"1", type: "1", subtype:'1',showafter:1000 });
+		}
+		if(currentInput!= null && currentInput.hasOwnProperty("form_id") && currentInput.hasOwnProperty("message_id")){
+			this.formResponseArray.push({ 'block_id':block_id, 'form_id': currentInput.form_id, 'value': value });
+			this.chatProvider.postFormResponse(this.customerCode, this.botCode, this.runMode, this.apiEndpoint, this.formResponseArray, currentInput.message_id).then(data=>{
+				console.log("postFormResponse");
+				console.log(data);
+				// this.processResponse(data);
+			});
 		}
 		this.processNextMessage();
 	}
 
 	private postInputData(){
-		// console.log(this.currentInputResult);
-		this.postFormResponse(this.currentInputResult, this.currentInput.pre_id, this.currentInput);
+		this.postSingleFormResponse(this.currentInputResult, this.currentInput.pre_id, this.currentInput);
 		this.currentInput = null;
 	}
 
