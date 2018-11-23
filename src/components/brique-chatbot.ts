@@ -27,11 +27,15 @@ const HTML_TEMPLATE = `
 						</div>
 					</div>
 				</div>
-				<div col-12 *ngIf="chatMessage.options!==null && chatMessage.options!==undefined && chatMessage.options.length > 0">
-					<div class="chatbot-action-container">
-						<ul class='__exit-buttonsInline'>
-							<li *ngFor="let option of chatMessage.options"><a href="#" class="__chatbot-action-button" (click)="optionClick(option);" [ngStyle]="{'background-color': chatbotActionBgColor}">{{ option.title }}</a></li>
-						</ul>
+				<div offset-1 no-padding *ngIf="chatMessage.options!==null && chatMessage.options!==undefined && chatMessage.options.length > 0">
+					<div class="chatbot-action-container blue-bubble1">
+						<div class="bubble-content1">
+							<ul class='__exit-buttonsInline blue-bubble-box'>
+								<li *ngFor="let option of chatMessage.options">
+									<a href="#" class="__chatbot-action-button bubble-content1" (click)="optionClick(option);" [ngStyle]="{'background-color': chatbotActionBgColor}">{{ option.title }}</a>
+								</li>
+							</ul>
+						</div>
 					</div>
 				</div>
 				<div offset-1 no-padding class="blue-bubble-box" *ngIf="chatMessage.sender == 2">
@@ -57,11 +61,6 @@ const HTML_TEMPLATE = `
 			</div>
 		</div>
 		<div class="chatbot-footer">
-			<div class="chatbot-action-container" *ngIf="chatbotActions.length > 0">
-				<ul class='__exit-buttonsInline'>
-					<li *ngFor="let chatbotAction of chatbotActions"><a href="#" class="__chatbot-action-button" (click)="optionClick(chatbotAction);" [ngStyle]="{'background-color': chatbotActionBgColor}">{{ chatbotAction.title }}</a></li>
-				</ul>
-			</div>
 			<div class="chatbot-form-element-container" *ngIf="currentInput != null && currentInput !== undefined">
 				<div *ngIf="currentInput.type == '51'">
 					<div class="bubble-container1">
@@ -260,6 +259,8 @@ margin-bottom: 5px;
 list-style-type: none;
 padding-left: 0px;
 margin: 10px 0;
+padding:0;
+float:right;
 }
 .__exit-buttonsInline li {
 display: inline-flex;
@@ -434,6 +435,7 @@ export class BRIQUEChatbot implements OnInit{
 	showWave: boolean = true;
 	currentInput: any = null;
 	currentInputResult: any = null;
+	currentMessage: any = null;
 	exitRoutes: any[] = [];
 	//
 	exitMessage: string;
@@ -486,6 +488,7 @@ export class BRIQUEChatbot implements OnInit{
 		this.exitRoutes =[];
 		this.currentBlockMessageIndex=0;
 		this.chatbotActions = [];
+		this.chatMessageOptions =[];
 	}
 
 	// Call to initiate the chat
@@ -558,7 +561,6 @@ export class BRIQUEChatbot implements OnInit{
 				}
 				this.processNextMessage();
 			}
-
 		}
 		else if(_data["status"] == "2"){
 
@@ -571,7 +573,6 @@ export class BRIQUEChatbot implements OnInit{
 				this.processNextMessage();
 			}
 			else if(this.subjects.length > 0){
-				// console.log(" show subjects in status 2");
 				this.showSubjects();
 			}
 		}
@@ -636,7 +637,6 @@ export class BRIQUEChatbot implements OnInit{
 							this.currentInput['message_id'] = blockMessage["message_id"];
 						}
 						else if( blockMessage["subtype"] == "52" ){
-							// let chatMessages = this.chatMessages;
 							this.currentInput =blockMessage["form"][0];
 							this.currentInput['form_id'] = blockMessage["form_id"];
 							this.currentInput['message_id'] = blockMessage["message_id"];
@@ -644,11 +644,10 @@ export class BRIQUEChatbot implements OnInit{
 							let _options = choice.options;
 							for( let _option of _options ){
 								var route = { block_route_id: 0, type: choice.type, title: _option.text, response_label:choice.pre_id, post_entry_message: _option.post_entry_message };
-								// this.chatMessageOptions.push(route);
-								this.chatbotActions.push(route);
+								this.chatMessageOptions.push(route);
 							}
-							// blockMessage['options']=this.chatMessageOptions;
-							// console.log(this.chatMessages);
+							blockMessage['options'] = this.chatMessageOptions;
+							this.currentMessage = blockMessage;
 						}
 						else if( blockMessage["subtype"] == "53" ){
 							this.currentInput = blockMessage["form"][0];
@@ -662,7 +661,6 @@ export class BRIQUEChatbot implements OnInit{
 			if( this.exitRoutes != null && this.exitRoutes.length > 0 ){
 				this.showWave = true;
 				this.showExitMessage();
-				// console.log(" When no messages ShowExitMessage");
 			}
 			this.scrollPageToBottom();
 		}
@@ -670,57 +668,74 @@ export class BRIQUEChatbot implements OnInit{
 
 	// Show the subjects
 	private showSubjects(){
+		// remove message option and reset new options
+		this.currentMessage =null; this.chatMessageOptions =[];
 		let subjectQuestion = this.chatbotSubjectQuestion;
-		var message = { title: subjectQuestion, sender:"1", type: "1", subtype:'1',showafter:500 };
+		var message = { title: subjectQuestion, sender:"1", type: "1", subtype:'1',showafter:500,options:[] };
 		setTimeout(()=>{
 			this.showWave = false;
-			this.chatMessages.push(message);
 			// Show the actions
-			// console.log(this.subjects);
 			for(let subject of this.subjects){
 				var route = { block_route_id: subject.subject_id, type: '101', title: subject.subject_title };
-				this.chatbotActions.push(route);
+				this.chatMessageOptions.push(route);
 			}
+			message.options = this.chatMessageOptions;
+			this.chatMessages.push(message);
+			// set current message
+			this.currentMessage = message;
 			this.scrollPageToBottom();
 		}, 500);
 	}
 
 	private showExitMessage(){
+		this.chatMessageOptions = [];
 		if(this.exitMessage!= null){
-			var message = { title: this.exitMessage, sender:"1", type: "101", subtype:'1',showafter:1000 };
+			var message = { title: this.exitMessage, sender:"1", type: "101", subtype:'1',showafter:1000,options:[] };
 			setTimeout(()=>{
 				this.showWave = false;
-				this.chatMessages.push(message);
 				// Show the actions
 				// For exit conversation if no - show  chatbot settings
 				for(let exitRoute of this.exitRoutes){
 					var route = { block_route_id: exitRoute.block_route_id, type: '100', title: exitRoute.title, 'block_id':exitRoute.block_id, 'route_id':exitRoute.block_route_id};
-					this.chatbotActions.push(route);
+					this.chatMessageOptions.push(route);
 				}
+				message.options = this.chatMessageOptions;
+				this.chatMessages.push(message);
+				// set current message
+				this.currentMessage = message;
 				this.scrollPageToBottom();
 			}, 1000);
 		}
 	}
 	private showEndConversation(){
+		this.chatMessageOptions = [];
 		if(this.chatbotEndConvQuestion != null){
-			var message = { title: this.chatbotEndConvQuestion, sender:"1", type: "1", subtype:'1',showafter:1000 };
+			var message = { title: this.chatbotEndConvQuestion, sender:"1", type: "1", subtype:'1',showafter:1000,options:[] };
 			setTimeout(()=>{
 				this.showWave = false;
-				this.chatMessages.push(message);
+				// this.chatMessages.push(message);
 				// Show the actions
 				// For exit conversation if no - show  chatbot settings
-				this.chatbotActions.push({ block_route_id: -1, type: "-1", title: "yes" }, { block_route_id: -2, type: "-1", title: "no" });
+				this.chatMessageOptions.push({ block_route_id: -1, type: "-1", title: "yes" }, { block_route_id: -2, type: "-1", title: "no" });
+				message.options = this.chatMessageOptions;
+				this.chatMessages.push(message);
+				// set current message
+				this.currentMessage = message;
 				this.scrollPageToBottom();
 			}, 1000);
 		}
 	}
 
 	private optionClick(chatbotAction: any){
-		// console.log("option click ::"+chatbotAction.type);
+		if(this.currentMessage.hasOwnProperty('options'))
+			this.currentMessage.options =[];
+		this.chatMessageOptions =[];
 		if( chatbotAction.type == '100'){
+			// console.log("optionClick take action 100");
 			this.postRouteResponse(chatbotAction);
 		}
 		else if( chatbotAction.type == '101' ){
+			// console.log("optionClick take action 101");
 			// Subject was selected
 			this.postSubjectSelection(chatbotAction);
 		}
@@ -729,11 +744,12 @@ export class BRIQUEChatbot implements OnInit{
 		}
 		else if( chatbotAction.type == '52' ){
 			// route was selected
-			// console.log("some sort of a route clicked");
+			// console.log("optionClick take action 52");
 			// console.log(chatbotAction);
 			this.postSingleFormResponse(chatbotAction.title, chatbotAction.response_label, chatbotAction);
 		}
 		else if(chatbotAction.type == '9999'){
+			// console.log("optionClick take action 9999");
 			this.resetBlocks();
 			this.showSubjects();
 			this.currentSelection = 2;
@@ -751,11 +767,9 @@ export class BRIQUEChatbot implements OnInit{
 					this.currentSelection = 2;
 				}
 				else{
-					this.showBotResponse({ title: title, sender:"1", type: "1", subtype:'1',showafter:1000 });
-					this.showRestartConversation();
+					this.showRestartConversation(title);
 				}
 			}, 1000);
-
 		}
 	}
 
@@ -787,8 +801,6 @@ export class BRIQUEChatbot implements OnInit{
 		this.resetBlocks();
 		this.showMyResponse(chatbotAction.title, null);
 		this.chatProvider.postSubjectSelection(this.customerCode, this.botCode, this.runMode, this.apiEndpoint, chatbotAction.block_route_id).then(data=>{
-			// console.log("Subject response data");
-			// console.log(data);
 			this.processResponse(data);
 		});
 	}
@@ -802,8 +814,6 @@ export class BRIQUEChatbot implements OnInit{
 		let currentInput = this.currentInput;
 		// console.log(currentInput);
 		this.chatProvider.postRouteResponse(this.customerCode, this.botCode, this.runMode, this.apiEndpoint, chatbotAction.block_id, chatbotAction.route_id, this.currentSelection).then(data=>{
-			// console.log("Post route response data");
-			// console.log(data);
 			this.processResponse(data);
 		});
 	}
@@ -811,10 +821,7 @@ export class BRIQUEChatbot implements OnInit{
 	// -----------------------------------
 	// Single form response
 	private postSingleFormResponse(value: string, key: string, chatbotAction : any){
-		this.chatbotActions = [];
 		this.formResponseArray = [];
-		// console.log("postSingleFormResponse action");
-		// console.log(chatbotAction);
 		let currentInput = this.currentInput;
 		let block_id = this.currentBlock.block_id;
 		this.showMyResponse(value, key);
@@ -844,10 +851,12 @@ export class BRIQUEChatbot implements OnInit{
 
 	private postInputData(){
 		this.postSingleFormResponse(this.currentInputResult, this.currentInput.pre_id, this.currentInput);
+		this.currentInputResult =null;
 		this.currentInput = null;
 	}
 
-	// --------------------------
+	// --------------------------------
+	// Show user response
 	private showMyResponse(myResponse: string, responseLabel: string){
 		this.chatMessages.push({ title: myResponse, label: responseLabel, type: 1, sender: 2 });
         this.scrollPageToBottom();
@@ -863,7 +872,21 @@ export class BRIQUEChatbot implements OnInit{
 			this.scrollPageToBottom();
 		}, 1000);
 	}
+	// ------------------------------------
+	// Restart the conversation
+	private showRestartConversation(title){
+		var message = { title: title, sender:"1", type: "1", subtype:'1',showafter:1000, options:[] };
+		setTimeout(()=>{
+			message.options.push({ block_route_id: -1, type: '9999', title: "Restart" });
+			this.currentSelection = 0;
+			this.scrollPageToBottom();
+			this.chatMessages.push(message);
+			this.currentMessage = this.chatMessages;
+		}, 1000);
+	}
 
+	// ----------------------------------
+	// Scroll to top
 	private scrollPageToBottom(){
 		setTimeout(()=>{
 			// this.contentArea.scrollToBottom();
@@ -871,15 +894,5 @@ export class BRIQUEChatbot implements OnInit{
 	            this.messagesList.nativeElement.scrollTop = this.messagesList.nativeElement.scrollHeight;
 	        } catch(err) { }
 		}, 50);
-	}
-
-	// Restart the conversation
-	private showRestartConversation(){
-		setTimeout(()=>{
-			var route = { block_route_id: -1, type: '9999', title: "Restart"};
-			this.chatbotActions.push(route);
-			this.currentSelection = 0;
-			this.scrollPageToBottom();
-		}, 1000);
 	}
 }
