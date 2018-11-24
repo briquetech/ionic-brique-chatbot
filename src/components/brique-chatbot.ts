@@ -27,16 +27,12 @@ const HTML_TEMPLATE = `
 						</div>
 					</div>
 				</div>
-				<div offset-1 no-padding *ngIf="chatMessage.options!==null && chatMessage.options!==undefined && chatMessage.options.length > 0">
-					<div class="chatbot-action-container blue-bubble1">
-						<div class="bubble-content1">
-							<ul class='__exit-buttonsInline blue-bubble-box'>
-								<li *ngFor="let option of chatMessage.options">
-									<a href="#" class="__chatbot-action-button bubble-content1" (click)="optionClick(option);" [ngStyle]="{'background-color': chatbotActionBgColor}">{{ option.title }}</a>
-								</li>
-							</ul>
-						</div>
-					</div>
+				<div class="_chatbot-options" offset-1 *ngIf="chatMessage.options!==null && chatMessage.options!==undefined && chatMessage.options.length > 0">
+					<ul class="_chatbot-action-container">
+						<li *ngFor="let option of chatMessage.options" [ngStyle]="{'background-color': chatbotActionBgColor}">
+							<a href="#" (click)="optionClick(option);">{{ option.title }}</a>
+						</li>
+					</ul>
 				</div>
 				<div offset-1 no-padding class="blue-bubble-box" *ngIf="chatMessage.sender == 2">
 					<div class="blue-bubble" [ngStyle]="{'background-color': userResponseBgColor}">
@@ -244,6 +240,28 @@ font-size: 16px !important;
 .nonfix {
 text-align: center;
 margin: 0 auto;
+}
+._chatbot-options {
+display: block;
+}
+._chatbot-options ._chatbot-action-container {
+list-style-type: none;
+margin: 0;
+padding-left: 0px;
+}
+._chatbot-options ._chatbot-action-container li {
+text-align: right;
+padding: 10px 15px;
+background: #fff;
+border: 1px solid #ddd;
+border-radius: 20px;
+margin: 5px 0;
+width: auto;
+float: right;
+}
+._chatbot-options ._chatbot-action-container li a {
+text-decoration: none;
+color:#fff;
 }
 .chatbot-action-container{
 text-align: right;
@@ -597,7 +615,7 @@ export class BRIQUEChatbot implements OnInit{
 		if( this.currentBlockMessages != null && this.currentBlockMessages.length > 0 ){
 			if ( this.currentBlockMessageIndex >= this.currentBlockMessages.length){
 				// Time to show the subjects and return
-				// console.log("processNextMessage currentSelection :: "+this.currentSelection);
+				console.log("processNextMessage currentSelection :: "+this.currentSelection);
 				if( this.currentSelection == 1 ){
 					if( this.exitRoutes != null && this.exitRoutes.length > 0 ){
 						this.showWave = true;
@@ -669,7 +687,7 @@ export class BRIQUEChatbot implements OnInit{
 	// Show the subjects
 	private showSubjects(){
 		// remove message option and reset new options
-		this.currentMessage =null; this.chatMessageOptions =[];
+		this.currentMessage =[]; this.chatMessageOptions =[];
 		let subjectQuestion = this.chatbotSubjectQuestion;
 		var message = { title: subjectQuestion, sender:"1", type: "1", subtype:'1',showafter:500,options:[] };
 		setTimeout(()=>{
@@ -753,12 +771,15 @@ export class BRIQUEChatbot implements OnInit{
 			this.resetBlocks();
 			this.showSubjects();
 			this.currentSelection = 2;
+			let chatMessages = this.chatMessages;
+			chatMessages.pop(); //Remove last element from chatMessage
 		}
 		else{
+			let chatMessages = this.chatMessages;
+			chatMessages.pop(); //Remove last element from chatMessage
 			// This function called when exit route response comes
 			// Like Yes/No
 			this.showWave = true;
-			var title = this.chatbotEndConvStatement;
 			this.resetBlocks();
 			setTimeout(()=>{
 				this.showWave = false;
@@ -767,7 +788,7 @@ export class BRIQUEChatbot implements OnInit{
 					this.currentSelection = 2;
 				}
 				else{
-					this.showRestartConversation(title);
+					this.showRestartConversation();
 				}
 			}, 1000);
 		}
@@ -846,7 +867,6 @@ export class BRIQUEChatbot implements OnInit{
 				}
 			});
 		}
-
 	}
 
 	private postInputData(){
@@ -874,8 +894,10 @@ export class BRIQUEChatbot implements OnInit{
 	}
 	// ------------------------------------
 	// Restart the conversation
-	private showRestartConversation(title){
-		var message = { title: title, sender:"1", type: "1", subtype:'1',showafter:1000, options:[] };
+	private showRestartConversation(){
+		this.currentMessage =[];
+		var title = this.chatbotEndConvStatement;
+		var message = { title: title, sender:"1", type: "1", subtype:'1', showafter:1000, options:[] };
 		setTimeout(()=>{
 			message.options.push({ block_route_id: -1, type: '9999', title: "Restart" });
 			this.currentSelection = 0;
