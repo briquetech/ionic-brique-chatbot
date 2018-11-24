@@ -615,7 +615,7 @@ export class BRIQUEChatbot implements OnInit{
 		if( this.currentBlockMessages != null && this.currentBlockMessages.length > 0 ){
 			if ( this.currentBlockMessageIndex >= this.currentBlockMessages.length){
 				// Time to show the subjects and return
-				console.log("processNextMessage currentSelection :: "+this.currentSelection);
+				// console.log("processNextMessage currentSelection :: "+this.currentSelection);
 				if( this.currentSelection == 1 ){
 					if( this.exitRoutes != null && this.exitRoutes.length > 0 ){
 						this.showWave = true;
