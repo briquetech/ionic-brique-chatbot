@@ -23,14 +23,14 @@ const HTML_TEMPLATE = `
 							</div>
 							<a href="#" class="link-inapp" *ngIf="chatMessage.open_url!==null && (chatMessage.url_resource_type == 'w' || chatMessage.url_resource_type == 'p') && chatMessage.show_as == 'l'"  (click)="openNewUrl(chatMessage.url_resource_type, chatMessage.open_url)">Read</a>
 
-							<button ion-button class="btn-inapp" *ngIf="chatMessage.open_url!==null && (chatMessage.url_resource_type == 'w' || chatMessage.url_resource_type == 'p') && chatMessage.show_as == 'b'" (click)="openNewUrl(chatMessage.url_resource_type, chatMessage.open_url)">button</button>
+							<button ion-button class="btn-inapp" *ngIf="chatMessage.open_url!==null && (chatMessage.url_resource_type == 'w' || chatMessage.url_resource_type == 'p') && chatMessage.show_as == 'b'" (click)="openNewUrl(chatMessage.url_resource_type, chatMessage.open_url)">Action</button>
 						</div>
 					</div>
 				</div>
-				<div class="_chatbot-options" offset-1 *ngIf="chatMessage.options!==null && chatMessage.options!==undefined && chatMessage.options.length > 0">
+				<div col-10 class="_chatbot-options" offset-1 *ngIf="chatMessage.options!==null && chatMessage.options!==undefined && chatMessage.options.length > 0">
 					<ul class="_chatbot-action-container">
-						<li *ngFor="let option of chatMessage.options" [ngStyle]="{'background-color': chatbotActionBgColor}">
-							<a href="#" (click)="optionClick(option);">{{ option.title }}</a>
+						<li *ngFor="let option of chatMessage.options" [ngStyle]="{'background-color': chatbotActionBgColor}" (click)="optionClick(option);">
+							{{ option.title }}
 						</li>
 					</ul>
 				</div>
@@ -67,7 +67,7 @@ const HTML_TEMPLATE = `
 										<ion-input [(ngModel)]="currentInputResult" placeholder="Enter your text.."></ion-input>
 									</ion-col>
 									<ion-col col-3 text-right>
-										<button ion-button color="default" (click)="postInputData();"><ion-icon name="send"></ion-icon></button>
+										<button ion-button color="default" [disabled]="!currentInputResult" (click)="postInputData();"><ion-icon name="send"></ion-icon></button>
 									</ion-col>
 								</ion-row>
 							</div>
@@ -220,12 +220,12 @@ color: #fff;
 font-size: 20px;
 }
 .btn-inapp {
-margin: 0 !important;
+margin: 15px 10px 8px!important;
 background-color:#fff;
 color: #000;
 background-color: #fff;
 border-radius: 13px;
-padding: 20px;
+padding: 15px 25px;
 }
 
 .form-content {
@@ -248,9 +248,13 @@ display: block;
 list-style-type: none;
 margin: 0;
 padding-left: 0px;
+list-style-type: none;
+display: flex;
+align-items: flex-end;
+flex-direction: column;
+width: auto;
 }
 ._chatbot-options ._chatbot-action-container li {
-text-align: right;
 padding: 10px 15px;
 background: #fff;
 border: 1px solid #ddd;
@@ -258,10 +262,6 @@ border-radius: 20px;
 margin: 5px 0;
 width: auto;
 float: right;
-}
-._chatbot-options ._chatbot-action-container li a {
-text-decoration: none;
-color:#fff;
 }
 .chatbot-action-container{
 text-align: right;
@@ -686,6 +686,7 @@ export class BRIQUEChatbot implements OnInit{
 
 	// Show the subjects
 	private showSubjects(){
+		this.showWave = true;
 		// remove message option and reset new options
 		this.currentMessage =[]; this.chatMessageOptions =[];
 		let subjectQuestion = this.chatbotSubjectQuestion;
@@ -895,15 +896,18 @@ export class BRIQUEChatbot implements OnInit{
 	// ------------------------------------
 	// Restart the conversation
 	private showRestartConversation(){
+		this.showWave = true;
 		this.currentMessage =[];
 		var title = this.chatbotEndConvStatement;
 		var message = { title: title, sender:"1", type: "1", subtype:'1', showafter:1000, options:[] };
 		setTimeout(()=>{
+			this.showWave = false;
 			message.options.push({ block_route_id: -1, type: '9999', title: "Restart" });
 			this.currentSelection = 0;
 			this.scrollPageToBottom();
 			this.chatMessages.push(message);
 			this.currentMessage = this.chatMessages;
+
 		}, 1000);
 	}
 
