@@ -2,6 +2,7 @@ import { Component, ViewChild, ElementRef, Input, OnInit } from '@angular/core';
 import { NavController, NavParams, Content } from 'ionic-angular';
 import { BRIQUEChatProvider } from '../providers/chat-provider';
 import { MdlChatBlock } from './chat-block';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 // import { CMPChatAction } from './chat-action';, MdlChatMessage
 
 // TO Build
@@ -62,14 +63,16 @@ const HTML_TEMPLATE = `
 					<div class="bubble-container1">
 						<div class="white-bubble">
 							<div class="bubble-content1">
-								<ion-row>
-									<ion-col col-9>
-										<ion-input [(ngModel)]="currentInputResult" placeholder="Enter your text.."></ion-input>
-									</ion-col>
-									<ion-col col-3 text-right>
-										<button ion-button color="default" [disabled]="!currentInputResult" (click)="postInputData();"><ion-icon name="send"></ion-icon></button>
-									</ion-col>
-								</ion-row>
+								<form [formGroup]="chatbotform">
+									<ion-row>
+										<ion-col col-9>
+											<ion-input [type]="(currentInput.text_type == 1 || currentInput.text_type ==2 ?'text':'number')" ng-show="currentInput.text_type == 1 || currentInput.text_type ==2" formControlName="inputMessage" [(ngModel)]="currentInputResult" placeholder="Type message.." required></ion-input>
+										</ion-col>
+										<ion-col col-3 text-right>
+											<button ion-button color="default" [disabled]="!chatbotform.valid" (click)="postInputData();"><ion-icon name="send"></ion-icon></button>
+										</ion-col>
+									</ion-row>
+								</form>
 							</div>
 						</div>
 					</div>
@@ -474,9 +477,14 @@ export class BRIQUEChatbot implements OnInit{
 	chatbotEndConvQuestion: string;
 	chatbotEndConvStatement: string;
 
+	private chatbotform : FormGroup;
 	constructor(private navCtrl: NavController,
         private navParams:NavParams,
-        private chatProvider: BRIQUEChatProvider) {
+        private chatProvider: BRIQUEChatProvider,
+		private formBuilder: FormBuilder) {
+			this.chatbotform = this.formBuilder.group({
+		      inputMessage: [null, Validators.required],
+		    });
 	}
 	ngOnInit() {
 		// this.customerCode 	= this.navParams.get("customerCode");
@@ -513,7 +521,7 @@ export class BRIQUEChatbot implements OnInit{
 	private initiateChat(){
 		this.chatProvider.initiateChat(this.customerCode, this.botCode, this.runMode, this.mode, this.apiEndpoint).then(data=>{
             console.log("Initiate chatbot data from the server.");
-            console.log(data);
+            // console.log(data);
 			this.resetBlocks();
 			if( data.hasOwnProperty("chatbot") && data["chatbot"] != null && data["chatbot"] !== undefined ){
 				let chatbot = data["chatbot"];
@@ -655,8 +663,10 @@ export class BRIQUEChatbot implements OnInit{
 							let choice = blockMessage["form"][0];
 							let _options = choice.options;
 							for( let _option of _options ){
-								var route = { block_route_id: 0, type: choice.type, title: _option.text, response_label:choice.pre_id, post_entry_message: _option.post_entry_message };
-								this.chatMessageOptions.push(route);
+								if(_option.post_entry_message!=="undefined"){
+									var route = { block_route_id: 0, type: choice.type, title: _option.text, response_label:choice.pre_id, post_entry_message: _option.post_entry_message };
+									this.chatMessageOptions.push(route);
+								}
 							}
 							blockMessage['options'] = this.chatMessageOptions;
 							this.currentMessage = blockMessage;
@@ -740,6 +750,8 @@ export class BRIQUEChatbot implements OnInit{
 	}
 
 	private optionClick(chatbotAction: any){
+		// console.log("option click action");
+		this.showWave = true;
 		if(this.currentMessage.hasOwnProperty('options'))
 			this.currentMessage.options =[];
 		this.chatMessageOptions =[];
@@ -753,12 +765,12 @@ export class BRIQUEChatbot implements OnInit{
 			this.postSubjectSelection(chatbotAction);
 		}
 		else if( chatbotAction.type == '102' ){
+			// console.log("optionClick take action 102");
 			// here is chatBot single choice
 		}
 		else if( chatbotAction.type == '52' ){
 			// route was selected
 			// console.log("optionClick take action 52");
-			// console.log(chatbotAction);
 			this.postSingleFormResponse(chatbotAction.title, chatbotAction.response_label, chatbotAction);
 		}
 		else if(chatbotAction.type == '9999'){
@@ -843,7 +855,7 @@ export class BRIQUEChatbot implements OnInit{
 		let block_id = this.currentBlock.block_id;
 		this.showMyResponse(value, key); //show selected option text
 		if(chatbotAction!= null && chatbotAction.hasOwnProperty("post_entry_message")){
-			if(chatbotAction.post_entry_message!==null)
+			if(chatbotAction.post_entry_message!==undefined && chatbotAction.post_entry_message!=="undefined" && chatbotAction.post_entry_message!==null)
 				this.showBotResponse({ title: chatbotAction.post_entry_message, sender:"1", type: "1", subtype:'1',showafter:1000 });
 		}
 		if(currentInput!= null && currentInput.hasOwnProperty("form_id") && currentInput.hasOwnProperty("message_id")){
@@ -874,8 +886,9 @@ export class BRIQUEChatbot implements OnInit{
 	//----------------------------------
 	// When user enter value in
 	private postInputData(){
-		console.log("post input data called ");
-		console.log(this.currentInputResult);
+		this.showWave = true;
+		// console.log("post input data called ");
+		// console.log(this.currentInputResult);
 		this.postSingleFormResponse(this.currentInputResult, this.currentInput.pre_id, this.currentInput);
 		this.currentInputResult =null;
 		this.currentInput = null;
@@ -891,14 +904,12 @@ export class BRIQUEChatbot implements OnInit{
 	// -----------------------------------------------------
 	// Show Bot response When user answer to your question
 	private showBotResponse(botResponseMessage){
-		console.log(botResponseMessage);
 		this.showWave = true;
 		setTimeout(()=>{
 			this.showWave = false;
 			this.chatMessages.push(botResponseMessage);
 			this.scrollPageToBottom();
 		}, 1000);
-		console.log(this.chatMessages);
 	}
 	// ------------------------------------
 	// Restart the conversation
