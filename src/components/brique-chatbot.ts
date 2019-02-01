@@ -11,13 +11,24 @@ const HTML_TEMPLATE = `
 	<div class="chatbot-container" #content>
 		<div #list class="list chatbot-direct-chat-messages" [scrollTop]="list.scrollHeight">
 			<ng-template ngFor let-chatMessage let-i="index" [ngForOf]="chatMessages">
-				<div col-11 class="bubble-container" *ngIf="chatMessage.sender == 1">
+				<div col-10 class="bubble-container" *ngIf="chatMessage.sender == 1">
 					<span class="bot-icon"><img *ngIf="i==0" src="assets/imgs/bot-icon.jpg"></span>
-					<div class="white-bubble" [ngClass]="[chatMessage.subtype == '10'?'__chatbot-notification':'',chatMessage.subtype == '11'?'__chatbot-successful':'', chatMessage.subtype == '12'?'__chatbot-warning':'',chatMessage.subtype == '13'?'__chatbot-fatal':'']">
-						<div [ngClass]="(chatMessage.subtype == '1'?'image-wrapper':'')" *ngIf="chatMessage.include_image !== undefined && chatMessage.include_image==1 && chatMessage.resource_type !== undefined && chatMessage.resource_type == 'i' && chatMessage.resource_url.length > 0">
+					<div class="white-bubble" [ngClass]="[chatMessage.subtype == '10'?'__chatbot-notification':'',chatMessage.subtype == '11'?'__chatbot-successful':'', chatMessage.subtype == '12'?'__chatbot-warning insight-message-container':'',chatMessage.subtype == '13'?'__chatbot-fatal':'']">
+						<div [ngClass]="(chatMessage.subtype == '1'?'image-wrapper':'') || (chatMessage.subtype == '12'?'insight-icon':'')" *ngIf="chatMessage.include_image !== undefined && chatMessage.include_image==1 && chatMessage.resource_type !== undefined && chatMessage.resource_type == 'i' && chatMessage.resource_url.length > 0">
 						  <img src='{{ chatMessage.resource_url }}' class="__chatbot-image" alt="">
 						</div>
-						<div [ngClass]="(chatMessage.include_image!= null && chatMessage.include_image !== undefined && chatMessage.include_image==1 && chatMessage.resource_type!==undefined && chatMessage.resource_type == 'i' ?'image-content ':'bubble-content')">
+						<div *ngIf="chatMessage.subtype == '12'">
+							<div class="message-div">
+								<div [ngClass]="(chatMessage.title!= null && chatMessage.title !== undefined && chatMessage.body!= null && chatMessage.body!==undefined ?'__chatbot-body-title':'')">{{ chatMessage.title }}</div>
+								<div *ngIf="chatMessage.body != null && chatMessage.body !== undefined">
+									{{ chatMessage.body }}
+								</div>
+								<a href="#" class="link-inapp" *ngIf="chatMessage.open_url!==null && (chatMessage.url_resource_type == 'w' || chatMessage.url_resource_type == 'p') && chatMessage.show_as == 'l'"  (click)="openNewUrl(chatMessage.url_resource_type, chatMessage.open_url)">Read</a>
+
+								<button ion-button class="btn-inapp" *ngIf="chatMessage.open_url!==null && (chatMessage.url_resource_type == 'w' || chatMessage.url_resource_type == 'p') && chatMessage.show_as == 'b'" (click)="openNewUrl(chatMessage.url_resource_type, chatMessage.open_url)">Action</button>
+							</div>
+						</div>
+						<div *ngIf="chatMessage.subtype !== '12'" [ngClass]="(chatMessage.include_image!= null && chatMessage.include_image !== undefined && chatMessage.include_image==1 && chatMessage.resource_type!==undefined && chatMessage.resource_type == 'i' ?'image-content ':'bubble-content')">
 							<div [ngClass]="(chatMessage.title!= null && chatMessage.title !== undefined && chatMessage.body!= null && chatMessage.body!==undefined ?'__chatbot-body-title':'')">{{ chatMessage.title }}</div>
 							<div *ngIf="chatMessage.body != null && chatMessage.body !== undefined">
 								{{ chatMessage.body }}
@@ -35,7 +46,7 @@ const HTML_TEMPLATE = `
 						</li>
 					</ul>
 				</div>
-				<div offset-1 no-padding class="blue-bubble-box" *ngIf="chatMessage.sender == 2">
+				<div offset-2 no-padding class="blue-bubble-box" *ngIf="chatMessage.sender == 2">
 					<div class="blue-bubble" [ngStyle]="{'background-color': userResponseBgColor}">
 						<div class="bubble-content">
 							<ul>
@@ -105,9 +116,6 @@ flex-direction: column;
 height: 100%;
 background-color: #f7f7f9;
 }
-ion-content{
-background-color: #f3f3f3;
-}
 .chatbot-direct-chat-messages {
 overflow: auto;
 padding: 10px;
@@ -165,16 +173,18 @@ border-radius: 50%;
 }
 .white-bubble, .blue-bubble {
 background-color: #fff;
-font-size: 15px;
+font-size: 16px;
 border-top-left-radius: 0em;
 border-top-right-radius: 0.5em;
 border-bottom-left-radius: 0.5em;
 border-bottom-right-radius: 0.5em;
-box-shadow: 0 0.4px 0.2px rgba(0,0,0,0.35);
--webkit-box-shadow: 0 0.4px 0.2px rgba(0,0,0,0.35);
 padding-left: 0px;
-margin: 0px 0px 4px 0px;
+margin: 0px 0px 6px 0px;
 overflow: hidden;
+}
+.white-bubble{
+box-shadow: 0px 2px 4px rgba(10,12,40,0.08);
+-webkit-box-shadow: 0px 2px 4px rgba(10,12,40,0.08);
 }
 .blue-bubble-box{
 display:flex;
@@ -183,14 +193,16 @@ float:right;
 }
 .blue-bubble {
 background-color: #0084ff;
-border-top-left-radius: 0.5em;
-border-top-right-radius: 0em;
+border-top-left-radius: 10px;
+border-top-right-radius: 0px;
+border-bottom-left-radius: 10px;
+border-bottom-right-radius: 10px;
 float: right;
 color: #fff;
-margin: 0px 0px 5px 0px;
+margin: 0px 0px 6px 0px;
 }
 .bubble-content {
-padding: 10px;
+padding: 8px 16px;
 }
 .blue-bubble ul{
 margin: 0; padding: 0;list-style: none;
@@ -219,7 +231,7 @@ font-size: 12px;margin-bottom: 3px;
 }
 .link-inapp{
 margin: 0 !important;
-color: #fff;
+color: #0084ff;
 font-size: 20px;
 }
 .btn-inapp {
@@ -258,11 +270,11 @@ flex-direction: column;
 width: auto;
 }
 ._chatbot-options ._chatbot-action-container li {
-padding: 10px 15px;
+padding: 7px 21px;
 background: #fff;
-border: 1px solid #ddd;
+border: 1px solid #eaebf0;
 border-radius: 20px;
-margin: 5px 0;
+margin-bottom: 6px;
 width: auto;
 float: right;
 }
@@ -389,7 +401,36 @@ startColorstr='#59c19d', endColorstr='#81e77d', GradientType=1 );
 width: 100px;
 height: 100px;
 }
-/*successful bubble css*/
+/* end successful bubble css*/
+
+/*warning bubble OR insight-message css*/
+.insight-message-container {
+background: linear-gradient(130.61deg, #E28664 9.1%, #D86862 46.23%,
+#CA5D72 94.81%), linear-gradient(295.65deg, #FE744F 2.04%, #EE9E6C
+94.14%);
+border-top-left-radius: 0PX;
+border-top-right-radius: 17px;
+border-bottom-left-radius: 17px;
+border-bottom-right-radius: 17px;
+box-shadow: 0px 2px 4px rgba(10, 12, 40, 0.08);
+-webkit-box-shadow: 0px 2px 4px rgba(10, 12, 40, 0.08);
+//margin: 30px 46px 12px 10px;
+overflow: hidden;
+width: 100%;
+padding:17px;
+}
+.insight-message-container .insight-icon {
+float: left;
+margin-right: 17px;
+}
+.insight-message-container .message-div {
+overflow: hidden;
+font-size: 16px;
+color: #fff;
+font-family: 'Merriweather-Regular';
+line-height: 23px;
+}
+/* end warning bubble css*/
 .__chatbot-fatal {
 padding: 18px;
 text-align: center;
@@ -430,7 +471,6 @@ export class BRIQUEChatbot implements OnInit{
 	@Input('customerCode') customerCode: string;
 	@Input('botCode') botCode: string;
 	@Input('runMode') runMode: number;
-	mode: string = "mobile";
     @Input('apiEndpoint') apiEndpoint: string;
 
 	initiateEndpoint: string;
@@ -451,7 +491,6 @@ export class BRIQUEChatbot implements OnInit{
 
 	chatMessages: any[] = [];
 	chatMessageOptions: any[] =[];
-	chatbotActions: any[] =[];
 	formResponseArray: any[] =[];
 	showWave: boolean = true;
 	currentInput: any = null;
@@ -487,11 +526,6 @@ export class BRIQUEChatbot implements OnInit{
 		    });
 	}
 	ngOnInit() {
-		// this.customerCode 	= this.navParams.get("customerCode");
-		// this.botCode 		= this.navParams.get("botCode");
-		// this.runMode 		= this.navParams.get("runMode");
-		this.mode = "mobile";
-        // this.apiEndpoint	= this.navParams.get("apiEndpoint");
 		console.log("CC:"+this.customerCode+"===BC:"+this.botCode+"===RM:"+this.runMode+"===AE:"+this.apiEndpoint);
         if( this.customerCode == null || this.customerCode === undefined || this.customerCode.trim().length == 0 ||
 			this.botCode == null || this.botCode === undefined ||
@@ -501,9 +535,14 @@ export class BRIQUEChatbot implements OnInit{
 		this.registerChatbot();
 	}
 
+	// when the component gets the focus back
+	public ionViewDidEnter(){
+
+	}
+
     // Call to register the chatbot
 	private registerChatbot(){
-		this.initiateChat();
+		this.initiateChatbot();
 	}
 
 	// Reset the blocks
@@ -513,15 +552,16 @@ export class BRIQUEChatbot implements OnInit{
 		this.exitMessage="";
 		this.exitRoutes =[];
 		this.currentBlockMessageIndex=0;
-		this.chatbotActions = [];
 		this.chatMessageOptions =[];
 	}
 
 	// Call to initiate the chat
-	private initiateChat(){
-		this.chatProvider.initiateChat(this.customerCode, this.botCode, this.runMode, this.mode, this.apiEndpoint).then(data=>{
+	private initiateChatbot(){
+		this.chatProvider.initiateChatbot(this.customerCode, this.botCode, this.runMode, this.apiEndpoint).then(data=>{
             console.log("Initiate chatbot data from the server.");
             // console.log(data);
+			// console.log("set bot session id "+data['bot_session_id']);
+			localStorage.setItem("bot_session_id", data['bot_session_id']);
 			this.resetBlocks();
 			if( data.hasOwnProperty("chatbot") && data["chatbot"] != null && data["chatbot"] !== undefined ){
 				let chatbot = data["chatbot"];
@@ -560,16 +600,19 @@ export class BRIQUEChatbot implements OnInit{
 				// ----------------------------------------------
 				// Manage subjects here
 				// PENDING: need to take a good look at this
-				if( greeting.hasOwnProperty("subjects") && greeting["subjects"]!= null && greeting["subjects"] !== undefined ){
-					this.subjects = greeting["subjects"];
-				}
+				// if( greeting.hasOwnProperty("subjects") && greeting["subjects"]!= null && greeting["subjects"] !== undefined ){
+				// 	this.subjects = greeting["subjects"];
+				// }
 			}
         });
 	}
 
 	//-------------------------------------
 	//  Process the response
+	//-------------------------------------
 	private processResponse(_data){
+		// console.log("process Response");
+		// console.log(_data);
 		// if status == 1, routes are still coming
 		// if status == 2, time to show subjects
 		// if status == 3, time to rewind
@@ -671,9 +714,6 @@ export class BRIQUEChatbot implements OnInit{
 							blockMessage['options'] = this.chatMessageOptions;
 							this.currentMessage = blockMessage;
 						}
-						// else if( blockMessage["subtype"] == "53" ){
-						// 	this.currentInput = blockMessage["form"][0];
-						// }
 					}
 				}
 				this.scrollPageToBottom();
@@ -690,24 +730,31 @@ export class BRIQUEChatbot implements OnInit{
 
 	// Show the subjects
 	private showSubjects(){
-		this.showWave = true;
-		// remove message option and reset new options
-		this.currentMessage =[]; this.chatMessageOptions =[];
-		let subjectQuestion = this.chatbotSubjectQuestion;
-		var message = { title: subjectQuestion, sender:"1", type: "1", subtype:'1',showafter:500,options:[] };
-		setTimeout(()=>{
-			this.showWave = false;
-			// Show the actions
-			for(let subject of this.subjects){
-				var route = { block_route_id: subject.subject_id, type: '101', title: subject.subject_title };
-				this.chatMessageOptions.push(route);
+		// console.log("calling show subjects");
+		this.chatProvider.showSubjects(this.customerCode, this.botCode, this.runMode, this.apiEndpoint).then(data=>{
+			if( data.hasOwnProperty('subjects')){
+				this.subjects = data['subjects'];
+				this.showWave = true;
+				// remove message option and reset new options
+				this.currentMessage =[]; this.chatMessageOptions =[];
+				let subjectQuestion = this.chatbotSubjectQuestion;
+				var message = { title: subjectQuestion, sender:"1", type: "1", subtype:'1',showafter:500,options:[] };
+
+				setTimeout(()=>{
+					this.showWave = false;
+					// Show the actions
+					for(let subject of this.subjects){
+						var route = { block_route_id: subject.subject_id, type: '101', title: subject.subject_title };
+						this.chatMessageOptions.push(route);
+					}
+					message.options = this.chatMessageOptions;
+					this.chatMessages.push(message);
+					// set current message
+					this.currentMessage = message;
+					this.scrollPageToBottom();
+				}, 1000);
 			}
-			message.options = this.chatMessageOptions;
-			this.chatMessages.push(message);
-			// set current message
-			this.currentMessage = message;
-			this.scrollPageToBottom();
-		}, 500);
+		});
 	}
 
 	private showExitMessage(){
@@ -802,7 +849,7 @@ export class BRIQUEChatbot implements OnInit{
 	}
 
 	private openNewUrl(type:string,externalURL:string){
-		// console.log(type +" url "+externalURL);
+		console.log(type +" url "+externalURL);
 		if(type == 'w'){
 			//Use in app browser
 			//show external url
@@ -811,17 +858,18 @@ export class BRIQUEChatbot implements OnInit{
 		if(type == 'p'){
 			// Need to handle errors
 		 	//show ionic page
-		 	// this.navCtrl.push(externalURL).then(
-		    //   response => {
-		    //     console.log('Response ' + response);
-		    //   },
-		    //   error => {
-		    //     console.log('Error: ' + error);
-		    //   }
-		    // ).catch(exception => {
-			//       console.log('Exception ' + exception);
-			// });
-		 	// console.log("IONIC PAGE URL");
+			let chatbotObject = localStorage.getItem("chatbotobject");
+		 	this.navCtrl.push(externalURL, {'chatbotobject':chatbotObject}).then(
+		      response => {
+		        console.log('Response ' + response);
+		      },
+		      error => {
+		        console.log('Error: ' + error);
+		      }
+		    ).catch(exception => {
+			      console.log('Exception ' + exception);
+			});
+		 	console.log("IONIC PAGE URL");
 	 	}
 	}
 
@@ -854,31 +902,49 @@ export class BRIQUEChatbot implements OnInit{
 		let currentInput = this.currentInput;
 		let block_id = this.currentBlock.block_id;
 		this.showMyResponse(value, key); //show selected option text
+		let nextMessage = {};
+		// This should typically come after server call
 		if(chatbotAction!= null && chatbotAction.hasOwnProperty("post_entry_message")){
 			if(chatbotAction.post_entry_message!==undefined && chatbotAction.post_entry_message!=="undefined" && chatbotAction.post_entry_message!==null)
-				this.showBotResponse({ title: chatbotAction.post_entry_message, sender:"1", type: "1", subtype:'1',showafter:1000 });
+				nextMessage = { title: chatbotAction.post_entry_message, sender:"1", type: "1", subtype:'1',showafter:1000 };
 		}
 		if(currentInput!= null && currentInput.hasOwnProperty("form_id") && currentInput.hasOwnProperty("message_id")){
 			this.formResponseArray.push({ 'block_id':block_id, 'form_id': currentInput.form_id, 'value': value });
 			this.chatProvider.postFormResponse(this.customerCode, this.botCode, this.runMode, this.apiEndpoint, this.formResponseArray, currentInput.message_id).then(data=>{
-				if(data['status'] == 1 && data.hasOwnProperty("block") && data["block"]!= null && data["block"] !== undefined ){
-					let block = data['block'];
+				// console.log("post form response");
+				// console.log(data);
+				let responseData = data;
+				if(data instanceof Array)
+					responseData = data[0];
+				if(responseData['status'] == 1 && responseData.hasOwnProperty("block") && responseData["block"]!= null && responseData["block"] !== undefined ){
+					let block = responseData['block'];
+					// console.log("************Displaying block");
+					// console.log(block);
 					if(block.hasOwnProperty('messages')){
+						this.showWave = true;
 						var i=0;
 						for( let _message of block['messages']){
+							// console.log(_message);
 							this.showBotResponse(_message);
 							i++;
 						}
+						// Now show the next message
+						this.showBotResponse(nextMessage);
 						if(i == block['messages'].length)
 							this.processNextMessage();
 					}
 					else{
+						// Now show the next message
+						this.showBotResponse(nextMessage);
 						// here is pending to manage subpressed in processNextMessage
 						this.processNextMessage();
 					}
 				}
-				else
+				else{
+					// Now show the next message
+					this.showBotResponse(nextMessage);
 					this.processNextMessage();
+				}
 			});
 		}
 	}
